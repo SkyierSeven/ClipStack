@@ -10,6 +10,7 @@ DIST="$ROOT/dist"
 cd "$ROOT"
 
 echo "==> Building ClipStack ($CONFIGURATION)..."
+mkdir -p "$DERIVED_DATA"
 BUILD_LOG="$DERIVED_DATA/build.log"
 if ! xcodebuild \
   -scheme ClipStack \
