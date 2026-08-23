@@ -84,10 +84,7 @@ struct OnboardingView: View {
                 .foregroundStyle(.secondary)
             ShortcutRecorderView(
                 title: "打开面板",
-                hotkey: Binding(
-                    get: { appState.panelHotkey },
-                    set: { appState.updatePanelHotkey($0) }
-                ),
+                hotkey: panelHotkeyBinding,
                 onChange: {}
             )
         }
@@ -107,12 +104,21 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    @MainActor
+    private var panelHotkeyBinding: Binding<StoredHotkey> {
+        Binding(
+            get: { appState.panelHotkey },
+            set: { appState.updatePanelHotkey($0) }
+        )
+    }
+
     private func openAccessibilitySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
     }
 
+    @MainActor
     private func finish() {
         appState.completeOnboarding(launchAtLogin: launchAtLogin)
         onComplete?()

@@ -56,6 +56,7 @@ private struct GeneralSettingsPane: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
+    @MainActor
     private var pauseBinding: Binding<Bool> {
         Binding(
             get: { appState.isMonitoringPaused },
@@ -66,6 +67,7 @@ private struct GeneralSettingsPane: View {
         )
     }
 
+    @MainActor
     private var unlimitedHistoryBinding: Binding<Bool> {
         Binding(
             get: { appState.isHistoryUnlimited },
@@ -73,6 +75,7 @@ private struct GeneralSettingsPane: View {
         )
     }
 
+    @MainActor
     private var historyLimitBinding: Binding<Int> {
         Binding(
             get: { appState.historyLimit },
@@ -80,6 +83,7 @@ private struct GeneralSettingsPane: View {
         )
     }
 
+    @MainActor
     private var launchAtLoginBinding: Binding<Bool> {
         Binding(
             get: { appState.launchAtLoginEnabled },
@@ -183,6 +187,7 @@ private struct ShortcutsSettingsPane: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
+    @MainActor
     private var panelHotkeyBinding: Binding<StoredHotkey> {
         Binding(
             get: { appState.panelHotkey },
@@ -190,6 +195,7 @@ private struct ShortcutsSettingsPane: View {
         )
     }
 
+    @MainActor
     private var slotHotkeyBinding: Binding<Bool> {
         Binding(
             get: { appState.slotHotkeyUsesOption },
