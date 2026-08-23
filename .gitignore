@@ -1,0 +1,35 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdata/
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Cursor / editor
+.cursor/
+.idea/
+.vscode/
+
+# Secrets
+.env
+.env.*
+*.pem
+*.p12
+credentials.json
+
+# Logs
+*.log
+/tmp/
