@@ -35,6 +35,7 @@
 		A1000001000000000000001B /* CodeHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001F /* CodeHighlighter.swift */; };
 		A1000001000000000000001C /* LaunchAtLoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* LaunchAtLoginService.swift */; };
 		A1000001000000000000001D /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* OnboardingView.swift */; };
+		A1000001000000000000001E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000022 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +70,7 @@
 		A2000001000000000000001F /* CodeHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeHighlighter.swift; sourceTree = "<group>"; };
 		A20000010000000000000020 /* LaunchAtLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginService.swift; sourceTree = "<group>"; };
 		A20000010000000000000021 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A20000010000000000000022 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +82,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A30000010000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001000000000000001E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXGroup section */
 		A40000010000000000000001 = {
@@ -100,6 +113,7 @@
 				A40000010000000000000006 /* Controllers */,
 				A40000010000000000000007 /* Views */,
 				A40000010000000000000008 /* Theme */,
+				A20000010000000000000022 /* Assets.xcassets */,
 				A20000010000000000000010 /* Info.plist */,
 				A20000010000000000000011 /* ClipStack.entitlements */,
 			);
@@ -184,6 +198,7 @@
 			buildPhases = (
 				A60000010000000000000001 /* Sources */,
 				A30000010000000000000001 /* Frameworks */,
+				A30000010000000000000002 /* Resources */,
 			);
 			buildRules = (
 			);
