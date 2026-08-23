@@ -24,9 +24,27 @@ ClipStack 运行在菜单栏，自动记录剪贴板历史，支持搜索、固�
 
 > 运行应用后，从菜单栏打开历史面板即可使用。
 
-## 快速开始
+## 下载安装
 
-### 下载构建
+在 [GitHub Releases](https://github.com/SkyierSeven/ClipStack/releases) 下载最新版：
+
+| 文件 | 说明 |
+|------|------|
+| `ClipStack-*-macOS-arm64.zip` | 解压后将 `ClipStack.app` 拖入「应用程序」 |
+| `ClipStack-*-macOS-arm64.dmg` | 打开磁盘映像后拖入「应用程序」 |
+
+> 当前为未签名构建，首次打开若被拦截，请在「系统设置 → 隐私与安全性」中允许运行。
+
+### 发布新版本（维护者）
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+推送 tag 后，GitHub Actions 会自动打包并上传到 Releases。也可在 Actions 页手动运行 **Release** 工作流。
+
+## 从源码构建
 
 ```bash
 git clone https://github.com/SkyierSeven/ClipStack.git

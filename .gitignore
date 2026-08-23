@@ -30,6 +30,5 @@ Icon?
 *.p12
 credentials.json
 
-# Logs
-*.log
-/tmp/
+dist/
+build/

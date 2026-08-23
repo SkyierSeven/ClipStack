@@ -12,6 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build ClipStack
+      - name: Build ClipStack (Release)
         run: |
-          xcodebuild -scheme ClipStack -configuration Debug -derivedDataPath build build
+          xcodebuild -scheme ClipStack -configuration Release -derivedDataPath build build
