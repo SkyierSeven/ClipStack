@@ -31,9 +31,22 @@ ClipStack 运行在菜单栏，自动记录剪贴板历史，支持搜索、固�
 | 文件 | 说明 |
 |------|------|
 | `ClipStack-*-macOS-arm64.zip` | 解压后将 `ClipStack.app` 拖入「应用程序」 |
-| `ClipStack-*-macOS-arm64.dmg` | 打开磁盘映像后拖入「应用程序」 |
+| `ClipStack-*-macOS-arm64.dmg` | 打开磁盘映像，将 `ClipStack.app` 拖入「应用程序」 |
 
-> 当前为未签名构建，首次打开若被拦截，请在「系统设置 → 隐私与安全性」中允许运行。
+### 未签名版本如何安装
+
+若提示「无法打开」或「来自身份不明的开发者」，任选其一：
+
+1. **右键打开**：在 `ClipStack.app` 上右键 →「打开」→ 再点「打开」
+2. **系统设置放行**：「系统设置 → 隐私与安全性」→ 找到被拦截提示 →「仍要打开」
+3. **移除隔离标记**（终端）：
+
+```bash
+xattr -cr /Applications/ClipStack.app
+open /Applications/ClipStack.app
+```
+
+> 正式发布版本会在配置 Apple 开发者证书后自动签名并公证，用户可直接双击安装。
 
 ### 发布新版本（维护者）
 
