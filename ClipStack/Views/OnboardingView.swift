@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import SwiftUI
 
+@MainActor
 struct OnboardingView: View {
     @Environment(AppState.self) private var appState
     var onComplete: (() -> Void)?
