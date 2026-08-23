@@ -623,6 +623,7 @@ struct CodePreviewView: View {
     var body: some View {
         ScrollView {
             Text(CodeHighlighter.highlight(text: text, language: language))
+                .font(.system(size: 10, design: .monospaced))
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .padding(6)
         }

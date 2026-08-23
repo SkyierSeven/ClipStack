@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 
 enum CodeLanguage: String, CaseIterable {
     case swift
@@ -61,8 +62,7 @@ enum CodeDetector {
 enum CodeHighlighter {
     static func highlight(text: String, language: CodeLanguage) -> AttributedString {
         var result = AttributedString(text)
-        result.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
-        result.foregroundColor = NSColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1)
+        result.foregroundColor = Color(red: 0.82, green: 0.84, blue: 0.88)
 
         let keywords: [String]
         switch language {
@@ -90,23 +90,23 @@ enum CodeHighlighter {
 
     private static func highlightKeywords(in result: inout AttributedString, text: String, keywords: [String]) {
         for keyword in keywords {
-            applyStyle(to: &result, in: text, pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", color: NSColor(red: 0.95, green: 0.45, blue: 0.75, alpha: 1))
+            applyStyle(to: &result, in: text, pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", color: Color(red: 0.95, green: 0.45, blue: 0.75))
         }
     }
 
     private static func highlightStrings(in result: inout AttributedString, text: String) {
-        applyStyle(to: &result, in: text, pattern: #""(?:\\.|[^"\\])*""#, color: NSColor(red: 0.98, green: 0.76, blue: 0.44, alpha: 1))
-        applyStyle(to: &result, in: text, pattern: #"\'(?:\\.|[^'\\])*\'"#, color: NSColor(red: 0.98, green: 0.76, blue: 0.44, alpha: 1))
+        applyStyle(to: &result, in: text, pattern: #""(?:\\.|[^"\\])*""#, color: Color(red: 0.98, green: 0.76, blue: 0.44))
+        applyStyle(to: &result, in: text, pattern: #"\'(?:\\.|[^'\\])*\'"#, color: Color(red: 0.98, green: 0.76, blue: 0.44))
     }
 
     private static func highlightComments(in result: inout AttributedString, text: String, language: CodeLanguage) {
         switch language {
         case .swift, .javascript:
-            applyStyle(to: &result, in: text, pattern: #"//.*$"#, color: NSColor(red: 0.45, green: 0.55, blue: 0.45, alpha: 1), options: [.anchorsMatchLines])
+            applyStyle(to: &result, in: text, pattern: #"//.*$"#, color: Color(red: 0.45, green: 0.55, blue: 0.45), options: [.anchorsMatchLines])
         case .python, .shell:
-            applyStyle(to: &result, in: text, pattern: #"#.*$"#, color: NSColor(red: 0.45, green: 0.55, blue: 0.45, alpha: 1), options: [.anchorsMatchLines])
+            applyStyle(to: &result, in: text, pattern: #"#.*$"#, color: Color(red: 0.45, green: 0.55, blue: 0.45), options: [.anchorsMatchLines])
         case .sql:
-            applyStyle(to: &result, in: text, pattern: #"--.*$"#, color: NSColor(red: 0.45, green: 0.55, blue: 0.45, alpha: 1), options: [.anchorsMatchLines])
+            applyStyle(to: &result, in: text, pattern: #"--.*$"#, color: Color(red: 0.45, green: 0.55, blue: 0.45), options: [.anchorsMatchLines])
         default:
             break
         }
@@ -116,7 +116,7 @@ enum CodeHighlighter {
         to result: inout AttributedString,
         in text: String,
         pattern: String,
-        color: NSColor,
+        color: Color,
         options: NSRegularExpression.Options = []
     ) {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else { return }

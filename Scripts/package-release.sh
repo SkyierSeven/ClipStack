@@ -10,11 +10,17 @@ DIST="$ROOT/dist"
 cd "$ROOT"
 
 echo "==> Building ClipStack ($CONFIGURATION)..."
-xcodebuild \
+BUILD_LOG="$DERIVED_DATA/build.log"
+if ! xcodebuild \
   -scheme ClipStack \
   -configuration "$CONFIGURATION" \
   -derivedDataPath "$DERIVED_DATA" \
-  build | tail -5
+  build >"$BUILD_LOG" 2>&1; then
+  echo "!! Build failed. Last 80 lines:"
+  tail -80 "$BUILD_LOG"
+  exit 1
+fi
+tail -5 "$BUILD_LOG"
 
 if [[ ! -d "$APP" ]]; then
   echo "!! App bundle not found: $APP"
