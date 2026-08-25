@@ -10,7 +10,6 @@ struct PersistedData: Codable {
     var isMonitoringPaused: Bool
     var panelHotkeyKeyCode: UInt32?
     var panelHotkeyModifiers: UInt32?
-    var slotHotkeyUsesOption: Bool?
     var hasCompletedOnboarding: Bool?
     var launchAtLoginEnabled: Bool?
 
@@ -26,7 +25,6 @@ struct PersistedData: Codable {
         isMonitoringPaused: false,
         panelHotkeyKeyCode: StoredHotkey.defaultPanel.keyCode,
         panelHotkeyModifiers: StoredHotkey.defaultPanel.carbonModifiers,
-        slotHotkeyUsesOption: false,
         hasCompletedOnboarding: false,
         launchAtLoginEnabled: false
     )
@@ -35,7 +33,6 @@ struct PersistedData: Codable {
         case items, pinboards, stackItemIDs, excludedBundleIDs, historyLimit
         case savedFiniteHistoryLimit, isMonitoringPaused
         case panelHotkeyKeyCode, panelHotkeyModifiers
-        case slotHotkeyUsesOption = "quickPasteUsesOption"
         case hasCompletedOnboarding, launchAtLoginEnabled
     }
 
@@ -49,7 +46,6 @@ struct PersistedData: Codable {
         isMonitoringPaused: Bool,
         panelHotkeyKeyCode: UInt32?,
         panelHotkeyModifiers: UInt32?,
-        slotHotkeyUsesOption: Bool?,
         hasCompletedOnboarding: Bool?,
         launchAtLoginEnabled: Bool?
     ) {
@@ -62,7 +58,6 @@ struct PersistedData: Codable {
         self.isMonitoringPaused = isMonitoringPaused
         self.panelHotkeyKeyCode = panelHotkeyKeyCode
         self.panelHotkeyModifiers = panelHotkeyModifiers
-        self.slotHotkeyUsesOption = slotHotkeyUsesOption
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.launchAtLoginEnabled = launchAtLoginEnabled
     }
@@ -78,7 +73,6 @@ struct PersistedData: Codable {
         isMonitoringPaused = try container.decode(Bool.self, forKey: .isMonitoringPaused)
         panelHotkeyKeyCode = try container.decodeIfPresent(UInt32.self, forKey: .panelHotkeyKeyCode)
         panelHotkeyModifiers = try container.decodeIfPresent(UInt32.self, forKey: .panelHotkeyModifiers)
-        slotHotkeyUsesOption = try container.decodeIfPresent(Bool.self, forKey: .slotHotkeyUsesOption)
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
         launchAtLoginEnabled = try container.decodeIfPresent(Bool.self, forKey: .launchAtLoginEnabled)
     }
@@ -94,7 +88,6 @@ struct PersistedData: Codable {
         try container.encode(isMonitoringPaused, forKey: .isMonitoringPaused)
         try container.encodeIfPresent(panelHotkeyKeyCode, forKey: .panelHotkeyKeyCode)
         try container.encodeIfPresent(panelHotkeyModifiers, forKey: .panelHotkeyModifiers)
-        try container.encodeIfPresent(slotHotkeyUsesOption, forKey: .slotHotkeyUsesOption)
         try container.encodeIfPresent(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
         try container.encodeIfPresent(launchAtLoginEnabled, forKey: .launchAtLoginEnabled)
     }

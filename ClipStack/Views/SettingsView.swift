@@ -157,26 +157,6 @@ private struct ShortcutsSettingsPane: View {
                 .padding(.vertical, 4)
             } header: {
                 Text("历史面板")
-            }
-
-            Section {
-                VStack(alignment: .leading, spacing: 14) {
-                    LabeledContent("数字快捷键") {
-                        Text(appState.slotHotkeyDisplay)
-                            .font(.body.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Toggle("插入最近 9 条需要按住 ⌥", isOn: slotHotkeyBinding)
-
-                    Text("开启后使用 ⌘⌥1–9，与打开面板的快捷键拉开距离，减少误触。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 4)
-            } header: {
-                Text("数字快捷键")
             } footer: {
                 Text("快捷键全局生效。修改后会立即应用，若与其他应用冲突请更换组合。")
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -192,14 +172,6 @@ private struct ShortcutsSettingsPane: View {
         Binding(
             get: { appState.panelHotkey },
             set: { appState.updatePanelHotkey($0) }
-        )
-    }
-
-    @MainActor
-    private var slotHotkeyBinding: Binding<Bool> {
-        Binding(
-            get: { appState.slotHotkeyUsesOption },
-            set: { appState.setSlotHotkeyUsesOption($0) }
         )
     }
 }

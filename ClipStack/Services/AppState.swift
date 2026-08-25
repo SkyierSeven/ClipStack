@@ -38,14 +38,9 @@ final class AppState {
     var selectedItemID: UUID?
 
     var panelHotkey = StoredHotkey.defaultPanel
-    var slotHotkeyUsesOption = false
 
     var panelHotkeyDisplay: String {
         panelHotkey.displayString
-    }
-
-    var slotHotkeyDisplay: String {
-        HotkeyDisplay.slotHotkeyRange(usesOption: slotHotkeyUsesOption)
     }
 
     var onInsertItem: ((ClipboardItem) -> Void)?
@@ -86,7 +81,6 @@ final class AppState {
         if let keyCode = data.panelHotkeyKeyCode, let modifiers = data.panelHotkeyModifiers {
             panelHotkey = StoredHotkey(keyCode: keyCode, carbonModifiers: modifiers)
         }
-        slotHotkeyUsesOption = data.slotHotkeyUsesOption ?? false
         selectedPinboardID = pinboards.first?.id
     }
 
@@ -109,7 +103,6 @@ final class AppState {
             isMonitoringPaused: isMonitoringPaused,
             panelHotkeyKeyCode: panelHotkey.keyCode,
             panelHotkeyModifiers: panelHotkey.carbonModifiers,
-            slotHotkeyUsesOption: slotHotkeyUsesOption,
             hasCompletedOnboarding: hasCompletedOnboarding,
             launchAtLoginEnabled: launchAtLoginEnabled
         )
@@ -218,12 +211,6 @@ final class AppState {
     func updatePanelHotkey(_ hotkey: StoredHotkey) {
         guard hotkey.isValidPanelHotkey else { return }
         panelHotkey = hotkey
-        save()
-        onHotkeySettingsChanged?()
-    }
-
-    func setSlotHotkeyUsesOption(_ enabled: Bool) {
-        slotHotkeyUsesOption = enabled
         save()
         onHotkeySettingsChanged?()
     }
@@ -349,17 +336,6 @@ final class AppState {
     func clearStack() {
         stackItemIDs.removeAll()
         save()
-    }
-
-    func insertItem(at index: Int) {
-        let list: [ClipboardItem]
-        if isSearching || isFilteringByType {
-            list = filteredHistoryItems
-        } else {
-            list = items.filter { $0.pinboardID == nil }
-        }
-        guard index >= 0, index < list.count else { return }
-        onInsertItem?(list[index])
     }
 
     func insertStackSequentially() async {

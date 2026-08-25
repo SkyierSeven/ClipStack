@@ -39,11 +39,6 @@ enum HotkeyDisplay {
         parts(keyCode: keyCode, carbonModifiers: carbonModifiers).joined(separator: " ")
     }
 
-    static func slotHotkeyRange(usesOption: Bool) -> String {
-        let prefix = usesOption ? "⌘ ⌥" : "⌘"
-        return "\(prefix)1 … \(prefix)9"
-    }
-
     private static func keyString(for keyCode: UInt32) -> String {
         switch Int(keyCode) {
         case kVK_ANSI_A: "A"

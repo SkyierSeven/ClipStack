@@ -265,7 +265,6 @@ struct HistoryView: View {
             ItemStripView(
                 items: appState.filteredHistoryItems,
                 emptyMessage: emptyMessageForCurrentView,
-                showShortcuts: true,
                 hoveredItemID: $hoveredItemID,
                 highlightQuery: appState.parsedSearchQuery.raw
             )
@@ -275,7 +274,6 @@ struct HistoryView: View {
                 ItemStripView(
                     items: appState.filteredHistoryItems,
                     emptyMessage: emptyMessageForCurrentView,
-                    showShortcuts: true,
                     hoveredItemID: $hoveredItemID,
                     highlightQuery: nil
                 )
@@ -285,7 +283,6 @@ struct HistoryView: View {
                     ItemStripView(
                         items: appState.pinnedItems,
                         emptyMessage: emptyMessageForCurrentView,
-                        showShortcuts: false,
                         hoveredItemID: $hoveredItemID,
                         highlightQuery: nil
                     )
@@ -294,7 +291,6 @@ struct HistoryView: View {
                 ItemStripView(
                     items: appState.stackItems,
                     emptyMessage: emptyMessageForCurrentView,
-                    showShortcuts: false,
                     hoveredItemID: $hoveredItemID,
                     highlightQuery: nil
                 )
@@ -355,7 +351,6 @@ struct ItemStripView: View {
     @Environment(AppState.self) private var appState
     let items: [ClipboardItem]
     let emptyMessage: String
-    let showShortcuts: Bool
     @Binding var hoveredItemID: UUID?
     let highlightQuery: String?
 
@@ -384,10 +379,9 @@ struct ItemStripView: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: AppTheme.cardSpacing) {
-                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        ForEach(items) { item in
                             ItemCardView(
                                 item: item,
-                                shortcutIndex: showShortcuts && index < 9 ? index : nil,
                                 isHovered: hoveredItemID == item.id,
                                 isSelected: appState.selectedItemID == item.id,
                                 highlightQuery: highlightQuery
@@ -421,7 +415,6 @@ struct ItemStripView: View {
 struct ItemCardView: View {
     @Environment(AppState.self) private var appState
     let item: ClipboardItem
-    let shortcutIndex: Int?
     let isHovered: Bool
     let isSelected: Bool
     let highlightQuery: String?
@@ -477,14 +470,6 @@ struct ItemCardView: View {
                 }
             }
             Spacer(minLength: 0)
-            if let shortcutIndex {
-                Text("⌘\(shortcutIndex + 1)")
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppTheme.accent)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(AppTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
-            }
         }
         .padding(.horizontal, 10)
         .frame(height: AppTheme.cardHeaderHeight, alignment: .center)

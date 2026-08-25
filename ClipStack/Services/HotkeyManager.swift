@@ -49,14 +49,6 @@ final class HotkeyManager {
     private func registerHotkeys() {
         let panel = appState.panelHotkey
         registerHotkey(keyCode: panel.keyCode, modifiers: panel.carbonModifiers, id: 1)
-
-        let slotHotkeyModifiers: UInt32 = appState.slotHotkeyUsesOption
-            ? UInt32(cmdKey | optionKey)
-            : UInt32(cmdKey)
-
-        for index in 0..<9 {
-            registerHotkey(keyCode: UInt32(kVK_ANSI_1 + index), modifiers: slotHotkeyModifiers, id: UInt32(10 + index))
-        }
     }
 
     private func registerHotkey(keyCode: UInt32, modifiers: UInt32, id: UInt32) {
@@ -88,14 +80,8 @@ final class HotkeyManager {
             &hotKeyID
         )
 
-        switch hotKeyID.id {
-        case 1:
+        if hotKeyID.id == 1 {
             historyPanel.toggle()
-        case 10...18:
-            let index = Int(hotKeyID.id - 10)
-            appState.insertItem(at: index)
-        default:
-            break
         }
     }
 }
