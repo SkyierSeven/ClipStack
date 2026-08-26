@@ -30,7 +30,9 @@ final class HistoryPanelController {
         panel.isOpaque = false
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
-        panel.contentView = NSHostingView(rootView: contentView)
+        let hostingView = NSHostingView(rootView: contentView)
+        hostingView.focusRingType = .none
+        panel.contentView = hostingView
     }
 
     func toggle() {

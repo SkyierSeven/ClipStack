@@ -42,6 +42,7 @@ struct HistoryView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .focusable()
+        .focusEffectDisabled()
         .onKeyPress(.leftArrow) {
             guard !searchFocused else { return .ignored }
             appState.moveSelection(offset: -1)
