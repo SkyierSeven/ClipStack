@@ -15,9 +15,10 @@ struct MenuBarMenuView: View {
 
         Divider()
 
-        SettingsLink {
-            Text("设置…")
+        Button("设置…") {
+            appState.onOpenSettings?()
         }
+        .keyboardShortcut(",", modifiers: .command)
 
         Divider()
 

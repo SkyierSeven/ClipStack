@@ -154,6 +154,8 @@ final class OnboardingWindowController {
         panel.contentView = NSHostingView(rootView: content)
         panel.center()
         panel.isReleasedWhenClosed = false
+        // Match Settings: show Dock + menu while a standard window is open.
+        NSApp.setActivationPolicy(.regular)
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         window = panel

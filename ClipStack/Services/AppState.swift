@@ -36,6 +36,7 @@ final class AppState {
     var onCopyItem: ((ClipboardItem) -> Void)?
     var onTogglePanel: (() -> Void)?
     var onClosePanel: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
     var onHotkeySettingsChanged: (() -> Void)?
 
     /// Non-nil while the “copied” toast should be visible.
