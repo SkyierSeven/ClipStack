@@ -1,18 +1,10 @@
 import Foundation
 import Observation
 
-enum HistoryTab: String, CaseIterable, Identifiable {
-    case history = "历史"
-    case stack = "插入队列"
-
-    var id: String { rawValue }
-}
-
 @MainActor
 @Observable
 final class AppState {
     var items: [ClipboardItem] = []
-    var stackItemIDs: [UUID] = []
     var excludedBundleIDs: Set<String> = []
     var historyLimit: Int = PersistedData.unlimitedHistoryLimit
     var savedFiniteHistoryLimit: Int = 500
@@ -31,7 +23,6 @@ final class AppState {
 
     var searchQuery = ""
     var shouldFocusSearch = false
-    var selectedTab: HistoryTab = .history
     var selectedContentFilter: ContentTypeFilter = .all
     var selectedItemID: UUID?
 
@@ -67,7 +58,6 @@ final class AppState {
     func load() {
         let data = store.load()
         items = data.items
-        stackItemIDs = data.stackItemIDs
         excludedBundleIDs = Set(data.excludedBundleIDs)
         historyLimit = data.historyLimit
         savedFiniteHistoryLimit = data.savedFiniteHistoryLimit
@@ -93,7 +83,6 @@ final class AppState {
         PersistedData(
             items: items,
             pinboards: [],
-            stackItemIDs: stackItemIDs,
             excludedBundleIDs: Array(excludedBundleIDs).sorted(),
             historyLimit: historyLimit,
             savedFiniteHistoryLimit: savedFiniteHistoryLimit,
@@ -107,26 +96,12 @@ final class AppState {
     }
 
     var currentDisplayItems: [ClipboardItem] {
-        switch selectedTab {
-        case .history:
-            if isSearching { return applyContentFilter(to: searchResults) }
-            return applyContentFilter(to: orderedHistoryItems(items))
-        case .stack:
-            if isSearching { return applyContentFilter(to: searchResults) }
-            let stack = stackItemIDs.compactMap { id in items.first { $0.id == id } }
-            return applyContentFilter(to: stack)
-        }
+        filteredHistoryItems
     }
 
     var filteredHistoryItems: [ClipboardItem] {
         if isSearching { return applyContentFilter(to: searchResults) }
         return applyContentFilter(to: orderedHistoryItems(items))
-    }
-
-    var stackItems: [ClipboardItem] {
-        if isSearching { return applyContentFilter(to: searchResults) }
-        let stack = stackItemIDs.compactMap { id in items.first { $0.id == id } }
-        return applyContentFilter(to: stack)
     }
 
     var searchResults: [ClipboardItem] {
@@ -300,7 +275,6 @@ final class AppState {
             ImageAssetStore.shared.deleteImage(relativePath: imagePath)
         }
         items.removeAll { $0.id == item.id }
-        stackItemIDs.removeAll { $0 == item.id }
         save()
     }
 
@@ -312,7 +286,6 @@ final class AppState {
             }
         }
         items.removeAll { !$0.isPinned }
-        stackItemIDs.removeAll { id in !items.contains { $0.id == id } }
         save()
     }
 
@@ -335,30 +308,6 @@ final class AppState {
             selectedItemID = moved.id
         }
         save()
-    }
-
-    func addToStack(_ item: ClipboardItem) {
-        stackItemIDs.removeAll { $0 == item.id }
-        stackItemIDs.append(item.id)
-        save()
-    }
-
-    func removeFromStack(_ item: ClipboardItem) {
-        stackItemIDs.removeAll { $0 == item.id }
-        save()
-    }
-
-    func clearStack() {
-        stackItemIDs.removeAll()
-        save()
-    }
-
-    func insertStackSequentially() async {
-        for id in stackItemIDs {
-            guard let item = items.first(where: { $0.id == id }) else { continue }
-            onInsertItem?(item, false)
-            try? await Task.sleep(nanoseconds: 350_000_000)
-        }
     }
 
     func toggleExcludedBundleID(_ bundleID: String) {
@@ -408,7 +357,6 @@ final class AppState {
                 if let imagePath = item.imagePath {
                     ImageAssetStore.shared.deleteImage(relativePath: imagePath)
                 }
-                stackItemIDs.removeAll { $0 == item.id }
                 return false
             }
             return true

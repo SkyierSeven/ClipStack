@@ -85,9 +85,6 @@ struct HistoryView: View {
             appState.onClosePanel?()
             return .handled
         }
-        .onChange(of: appState.selectedTab) { _, _ in
-            appState.selectFirstItemIfNeeded()
-        }
         .onChange(of: appState.searchQuery) { _, _ in
             appState.selectFirstItemIfNeeded()
         }
@@ -117,10 +114,15 @@ struct HistoryView: View {
 
     private var topBar: some View {
         HStack(spacing: 14) {
-            if !appState.isSearching {
-                tabButtons
-            } else {
+            if appState.isSearching {
                 searchModeBadge
+            } else {
+                Text("历史")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.16), in: Capsule())
             }
 
             searchField
@@ -128,7 +130,9 @@ struct HistoryView: View {
             Spacer()
 
             if !appState.isSearching {
-                trailingActions
+                actionChip("清空历史", systemImage: "trash") {
+                    appState.clearHistory()
+                }
             }
         }
     }
@@ -233,47 +237,6 @@ struct HistoryView: View {
         .frame(height: 28)
     }
 
-    private var tabButtons: some View {
-        HStack(spacing: 6) {
-            ForEach(HistoryTab.allCases) { tab in
-                Button {
-                    withAnimation(.easeOut(duration: 0.18)) {
-                        appState.selectedTab = tab
-                    }
-                } label: {
-                    Text(tab.rawValue)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(appState.selectedTab == tab ? Color.white : AppTheme.mutedText)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background {
-                            if appState.selectedTab == tab {
-                                Capsule().fill(Color.white.opacity(0.16))
-                            }
-                        }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var trailingActions: some View {
-        switch appState.selectedTab {
-        case .stack:
-            actionChip("依次插入", systemImage: "arrow.right.doc.on.clipboard") {
-                Task { await appState.insertStackSequentially() }
-            }
-            actionChip("清空", systemImage: "trash") {
-                appState.clearStack()
-            }
-        case .history:
-            actionChip("清空历史", systemImage: "trash") {
-                appState.clearHistory()
-            }
-        }
-    }
-
     private func actionChip(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
@@ -288,34 +251,13 @@ struct HistoryView: View {
 
     @ViewBuilder
     private var content: some View {
-        if appState.isSearching {
-            ItemStripView(
-                items: appState.filteredHistoryItems,
-                emptyMessage: emptyMessageForCurrentView,
-                hoveredItemID: $hoveredItemID,
-                highlightQuery: appState.parsedSearchQuery.raw,
-                showsGuideCard: false
-            )
-        } else {
-            switch appState.selectedTab {
-            case .history:
-                ItemStripView(
-                    items: appState.filteredHistoryItems,
-                    emptyMessage: emptyMessageForCurrentView,
-                    hoveredItemID: $hoveredItemID,
-                    highlightQuery: nil,
-                    showsGuideCard: true
-                )
-            case .stack:
-                ItemStripView(
-                    items: appState.stackItems,
-                    emptyMessage: emptyMessageForCurrentView,
-                    hoveredItemID: $hoveredItemID,
-                    highlightQuery: nil,
-                    showsGuideCard: false
-                )
-            }
-        }
+        ItemStripView(
+            items: appState.filteredHistoryItems,
+            emptyMessage: emptyMessageForCurrentView,
+            hoveredItemID: $hoveredItemID,
+            highlightQuery: appState.isSearching ? appState.parsedSearchQuery.raw : nil,
+            showsGuideCard: !appState.isSearching
+        )
     }
 
     private var emptyMessageForCurrentView: String {
@@ -328,12 +270,7 @@ struct HistoryView: View {
         if appState.isFilteringByType {
             return "当前分类下暂无\(appState.selectedContentFilter.rawValue)内容"
         }
-        switch appState.selectedTab {
-        case .history:
-            return "复制一些内容，它们会出现在这里"
-        case .stack:
-            return "把条目加入队列后可依次插入"
-        }
+        return "复制一些内容，它们会出现在这里"
     }
 }
 
@@ -622,10 +559,6 @@ struct ItemCardView: View {
         Button("插入到当前应用") { appState.insertItem(item) }
         Button("快速查看") { appState.previewItem(item) }
         Button(item.isPinned ? "取消固定" : "固定") { appState.togglePin(item) }
-        Button("加入插入队列") { appState.addToStack(item) }
-        if appState.stackItemIDs.contains(item.id) {
-            Button("移出队列") { appState.removeFromStack(item) }
-        }
         Divider()
         Button("纯文本插入") { appState.insertItem(item, asPlainText: true) }
         Button("删除", role: .destructive) { appState.deleteItem(item) }

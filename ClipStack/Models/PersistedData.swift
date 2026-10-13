@@ -3,7 +3,6 @@ import Foundation
 struct PersistedData: Codable {
     var items: [ClipboardItem]
     var pinboards: [Pinboard]
-    var stackItemIDs: [UUID]
     var excludedBundleIDs: [String]
     var historyLimit: Int
     var savedFiniteHistoryLimit: Int?
@@ -19,7 +18,6 @@ struct PersistedData: Codable {
     static let `default` = PersistedData(
         items: [],
         pinboards: [Pinboard(name: "默认")],
-        stackItemIDs: [],
         excludedBundleIDs: [],
         historyLimit: unlimitedHistoryLimit,
         savedFiniteHistoryLimit: 500,
@@ -41,7 +39,6 @@ struct PersistedData: Codable {
     init(
         items: [ClipboardItem],
         pinboards: [Pinboard],
-        stackItemIDs: [UUID],
         excludedBundleIDs: [String],
         historyLimit: Int,
         savedFiniteHistoryLimit: Int?,
@@ -54,7 +51,6 @@ struct PersistedData: Codable {
     ) {
         self.items = items
         self.pinboards = pinboards
-        self.stackItemIDs = stackItemIDs
         self.excludedBundleIDs = excludedBundleIDs
         self.historyLimit = historyLimit
         self.savedFiniteHistoryLimit = savedFiniteHistoryLimit
@@ -70,7 +66,8 @@ struct PersistedData: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         items = try container.decode([ClipboardItem].self, forKey: .items)
         pinboards = try container.decode([Pinboard].self, forKey: .pinboards)
-        stackItemIDs = try container.decode([UUID].self, forKey: .stackItemIDs)
+        // Legacy insert-queue IDs are ignored after the feature was removed.
+        _ = try container.decodeIfPresent([UUID].self, forKey: .stackItemIDs)
         excludedBundleIDs = try container.decode([String].self, forKey: .excludedBundleIDs)
         historyLimit = try container.decode(Int.self, forKey: .historyLimit)
         savedFiniteHistoryLimit = try container.decodeIfPresent(Int.self, forKey: .savedFiniteHistoryLimit)
@@ -86,7 +83,6 @@ struct PersistedData: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(items, forKey: .items)
         try container.encode(pinboards, forKey: .pinboards)
-        try container.encode(stackItemIDs, forKey: .stackItemIDs)
         try container.encode(excludedBundleIDs, forKey: .excludedBundleIDs)
         try container.encode(historyLimit, forKey: .historyLimit)
         try container.encodeIfPresent(savedFiniteHistoryLimit, forKey: .savedFiniteHistoryLimit)

@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey)](https://www.apple.com/macos/)
 
-ClipStack 运行在菜单栏，自动记录剪贴板历史，支持搜索、固定、队列插入与全局快捷键，所有数据仅保存在本机。
+ClipStack 运行在菜单栏，自动记录剪贴板历史，支持搜索、固定与全局快捷键，所有数据仅保存在本机。
 
 ## 功能
 
@@ -13,10 +13,9 @@ ClipStack 运行在菜单栏，自动记录剪贴板历史，支持搜索、固�
 |------|------|
 | 剪贴板历史 | 文本、链接、图片、文件；代码块语法高亮 |
 | 全局快捷键 | 自定义呼出历史面板 |
-| 固定板 | 常用内容长期保存 |
+| 固定 | 常用内容钉在列表前面 |
 | 搜索 | 全文搜索，支持 `type:` / `app:` / `固定:` 过滤与图片 OCR |
-| 插入队列 | 多条内容排队，依次插入 |
-| 键盘导航 | `←→` 选择、`Enter` 插入、`Delete` 删除、`Esc` 关闭 |
+| 键盘导航 | `←→` 选择、`Enter` 复制、`Delete` 删除、`Esc` 关闭 |
 | 隐私 | 自选排除应用，无默认黑名单 |
 | 存储 | 图片独立落盘，JSON 防抖写入 |
 
