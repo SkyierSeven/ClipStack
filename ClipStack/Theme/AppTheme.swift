@@ -4,8 +4,6 @@ enum AppTheme {
     static let cardWidth: CGFloat = 168
     static let cardHeight: CGFloat = 196
     static let cardHeaderHeight: CGFloat = 34
-    static let cardPreviewHeight: CGFloat = 104
-    static let cardActionHeight: CGFloat = 34
     static let cardCorner: CGFloat = 14
     static let cardInnerCorner: CGFloat = 8
     static let cardSpacing: CGFloat = 14
@@ -14,12 +12,16 @@ enum AppTheme {
     static let cardHoverOverflow: CGFloat = 14
     static let stripPadding: CGFloat = 20
 
+    /// topBar + filter + paddings/spacings around the card strip.
+    private static let panelChromeHeight: CGFloat = 14 + 30 + 8 + 28 + 8 + 16
+
     static var cardStripHeight: CGFloat {
         cardHeight + cardHoverOverflow * 2
     }
 
+    /// Fits the dock chrome; no leftover height from the removed hint/action bar.
     static var panelHeight: CGFloat {
-        58 + cardStripHeight + 18 + 36
+        panelChromeHeight + cardStripHeight
     }
 
     /// Dock chrome stays dark; cards follow system appearance.

@@ -54,7 +54,7 @@ final class HistoryPanelController {
         }
 
         let visibleFrame = screen.visibleFrame
-        let height = AppTheme.panelHeight + 24
+        let height = AppTheme.panelHeight
         let targetFrame = NSRect(
             x: visibleFrame.minX + 12,
             y: visibleFrame.minY + 8,

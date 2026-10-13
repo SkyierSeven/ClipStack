@@ -285,8 +285,8 @@ struct ItemStripView: View {
     private static let guideCardID = UUID(uuidString: "00000000-0000-4000-8000-000000000001")!
 
     var body: some View {
-        if items.isEmpty && !showsGuideCard {
-            emptyState
+        if items.isEmpty {
+            emptyStrip
         } else {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -309,10 +309,6 @@ struct ItemStripView: View {
                                 if hovering { appState.selectedItemID = item.id }
                             }
                         }
-
-                        if items.isEmpty {
-                            emptyStateInline
-                        }
                     }
                     .padding(.horizontal, AppTheme.cardHoverOverflow / 2)
                     .padding(.vertical, AppTheme.cardHoverOverflow)
@@ -332,19 +328,24 @@ struct ItemStripView: View {
         }
     }
 
-    private var emptyState: some View {
-        HStack {
-            Spacer()
+    /// Empty copy is centered in the full strip; guide card pins to the leading edge.
+    private var emptyStrip: some View {
+        ZStack {
             emptyStateContent
-                .frame(height: AppTheme.cardStripHeight)
-            Spacer()
-        }
-    }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-    private var emptyStateInline: some View {
-        emptyStateContent
-            .frame(width: AppTheme.cardWidth, height: AppTheme.cardHeight)
-            .padding(.leading, 4)
+            if showsGuideCard {
+                HStack(spacing: 0) {
+                    GuideCardView()
+                        .id(Self.guideCardID)
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .padding(.horizontal, AppTheme.cardHoverOverflow / 2)
+        .padding(.vertical, AppTheme.cardHoverOverflow)
+        .frame(maxWidth: .infinity)
+        .frame(height: AppTheme.cardStripHeight)
     }
 
     private var emptyStateContent: some View {
@@ -362,6 +363,7 @@ struct ItemStripView: View {
                     .foregroundStyle(AppTheme.mutedText.opacity(0.8))
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
