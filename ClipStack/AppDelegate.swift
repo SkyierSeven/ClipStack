@@ -8,7 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var clipboardMonitor: ClipboardMonitor?
     private var hotkeyManager: HotkeyManager?
     private let onboardingController = OnboardingWindowController()
-    private var settingsWindowCloseObserver: NSObjectProtocol?
+    private let settingsWindowController = SettingsWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Stay a menu-bar agent by default; promote to regular only while Settings is open.
@@ -49,14 +49,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.openSettings()
         }
 
-        observeSettingsWindowClose()
+        settingsWindowController.onClose = { [weak self] in
+            self?.restoreAccessoryPolicyIfNeeded()
+        }
+
         onboardingController.showIfNeeded(appState: appState)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        if let settingsWindowCloseObserver {
-            NotificationCenter.default.removeObserver(settingsWindowCloseObserver)
-        }
         appState.saveImmediately()
     }
 
@@ -64,58 +64,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func openSettings() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-
-        let settingsSelector = Selector(("showSettingsWindow:"))
-        let preferencesSelector = Selector(("showPreferencesWindow:"))
-        if NSApp.responds(to: settingsSelector) {
-            NSApp.sendAction(settingsSelector, to: nil, from: nil)
-        } else if NSApp.responds(to: preferencesSelector) {
-            NSApp.sendAction(preferencesSelector, to: nil, from: nil)
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            self?.bringStandardWindowsForward()
-        }
-        // Settings window may be created on the next run-loop turn.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            self?.bringStandardWindowsForward()
-        }
-    }
-
-    private func observeSettingsWindowClose() {
-        settingsWindowCloseObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.willCloseNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            // Defer until after the closing window is gone from NSApp.windows.
-            DispatchQueue.main.async {
-                self?.restoreAccessoryPolicyIfNeeded()
-            }
-        }
-    }
-
-    private func restoreAccessoryPolicyIfNeeded() {
-        let hasStandardWindow = NSApp.windows.contains { isStandardAppWindow($0) && $0.isVisible }
-        guard !hasStandardWindow else { return }
-        NSApp.setActivationPolicy(.accessory)
-    }
-
-    private func bringStandardWindowsForward() {
-        for window in NSApp.windows where isStandardAppWindow(window) {
-            window.collectionBehavior.insert(.moveToActiveSpace)
-            window.makeKeyAndOrderFront(nil)
-        }
+        settingsWindowController.show(appState: appState)
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// Titled app windows (Settings / onboarding), not the floating history NSPanel.
-    private func isStandardAppWindow(_ window: NSWindow) -> Bool {
-        guard !(window is NSPanel) else { return false }
-        guard window.styleMask.contains(.titled) else { return false }
-        // Status-item / menu-bar chrome sometimes appears as a tiny untitled-ish window.
-        guard window.contentView != nil else { return false }
-        return true
+    private func restoreAccessoryPolicyIfNeeded() {
+        // Keep Dock/menu while onboarding or settings is still visible.
+        if settingsWindowController.isVisible { return }
+        let hasOnboarding = NSApp.windows.contains {
+            $0.title == "ClipStack 引导" && $0.isVisible
+        }
+        if hasOnboarding { return }
+        NSApp.setActivationPolicy(.accessory)
     }
 
     private func insertItem(_ item: ClipboardItem, asPlainText: Bool) async {

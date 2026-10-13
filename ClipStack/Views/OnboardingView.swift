@@ -141,6 +141,7 @@ final class OnboardingWindowController {
         let content = OnboardingView(onComplete: { [weak self] in
             self?.window?.close()
             self?.window = nil
+            NSApp.setActivationPolicy(.accessory)
         })
             .environment(appState)
 
