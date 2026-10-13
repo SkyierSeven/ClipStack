@@ -159,6 +159,12 @@ final class OnboardingWindowController {
         NSApp.setActivationPolicy(.regular)
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        if let delegate = NSApp.delegate as? AppDelegate {
+            delegate.installMinimalMainMenu()
+            DispatchQueue.main.async {
+                delegate.installMinimalMainMenu()
+            }
+        }
         window = panel
     }
 }
