@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
     }
 
-    /// Replace the stock app menu with Pause / Open Panel / Quit, and keep Help.
+    /// Replace the stock app menu with Pause / Open Panel / Quit, and keep Help (+ system search).
     func installMinimalMainMenu() {
         let mainMenu = NSMenu()
 
@@ -123,20 +123,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let helpMenuItem = NSMenuItem()
         let helpMenu = NSMenu(title: "帮助")
         helpMenuItem.submenu = helpMenu
+
         let helpItem = NSMenuItem(
             title: "ClipStack 帮助",
             action: #selector(menuOpenHelp),
-            keyEquivalent: ""
+            keyEquivalent: "?"
         )
+        helpItem.keyEquivalentModifierMask = [.command]
         helpItem.target = self
         helpMenu.addItem(helpItem)
-        mainMenu.addItem(helpMenuItem)
 
+        helpMenu.addItem(.separator())
+
+        let shortcutsItem = NSMenuItem(
+            title: "快捷键一览",
+            action: #selector(menuOpenShortcutsHelp),
+            keyEquivalent: ""
+        )
+        shortcutsItem.target = self
+        helpMenu.addItem(shortcutsItem)
+
+        let onlineDocsItem = NSMenuItem(
+            title: "在线文档…",
+            action: #selector(menuOpenOnlineDocs),
+            keyEquivalent: ""
+        )
+        onlineDocsItem.target = self
+        helpMenu.addItem(onlineDocsItem)
+
+        let issuesItem = NSMenuItem(
+            title: "反馈问题…",
+            action: #selector(menuOpenIssues),
+            keyEquivalent: ""
+        )
+        issuesItem.target = self
+        helpMenu.addItem(issuesItem)
+
+        mainMenu.addItem(helpMenuItem)
         NSApp.mainMenu = mainMenu
+        // Required so macOS installs the Spotlight-for-Help search field.
+        NSApp.helpMenu = helpMenu
     }
 
     private var pauseMenuTitle: String {
         appState.isMonitoringPaused ? "恢复" : "暂停"
+    }
+
+    private var helpBookName: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleHelpBookName") as? String)
+            ?? "ClipStack Help"
     }
 
     @objc private func menuTogglePause() {
@@ -155,8 +190,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func menuOpenHelp() {
+        openHelpAnchor("home")
+    }
+
+    @objc private func menuOpenShortcutsHelp() {
+        openHelpAnchor("shortcuts")
+    }
+
+    @objc private func menuOpenOnlineDocs() {
         guard let url = URL(string: "https://github.com/SkyierSeven/ClipStack#readme") else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    @objc private func menuOpenIssues() {
+        guard let url = URL(string: "https://github.com/SkyierSeven/ClipStack/issues") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func openHelpAnchor(_ anchor: String) {
+        NSHelpManager.shared.openHelpAnchor(anchor, inBook: helpBookName)
     }
 
     private func insertItem(_ item: ClipboardItem, asPlainText: Bool) async {
