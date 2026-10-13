@@ -28,6 +28,10 @@ private struct GeneralSettingsPane: View {
             Section {
                 Toggle("暂停记录剪贴板", isOn: pauseBinding)
                 Toggle("登录时启动", isOn: launchAtLoginBinding)
+                Toggle("复制后隐藏面板", isOn: hidePanelAfterCopyBinding)
+            } footer: {
+                Text("开启后，点击卡片复制到剪贴板会先提示，再自动收起历史面板。")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Section {
@@ -88,6 +92,17 @@ private struct GeneralSettingsPane: View {
         Binding(
             get: { appState.launchAtLoginEnabled },
             set: { appState.setLaunchAtLogin($0) }
+        )
+    }
+
+    @MainActor
+    private var hidePanelAfterCopyBinding: Binding<Bool> {
+        Binding(
+            get: { appState.hidePanelAfterCopy },
+            set: { newValue in
+                appState.hidePanelAfterCopy = newValue
+                appState.save()
+            }
         )
     }
 }

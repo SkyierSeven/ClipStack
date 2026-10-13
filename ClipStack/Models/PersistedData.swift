@@ -12,6 +12,7 @@ struct PersistedData: Codable {
     var panelHotkeyModifiers: UInt32?
     var hasCompletedOnboarding: Bool?
     var launchAtLoginEnabled: Bool?
+    var hidePanelAfterCopy: Bool?
 
     static let unlimitedHistoryLimit = 0
 
@@ -26,14 +27,15 @@ struct PersistedData: Codable {
         panelHotkeyKeyCode: StoredHotkey.defaultPanel.keyCode,
         panelHotkeyModifiers: StoredHotkey.defaultPanel.carbonModifiers,
         hasCompletedOnboarding: false,
-        launchAtLoginEnabled: false
+        launchAtLoginEnabled: false,
+        hidePanelAfterCopy: true
     )
 
     private enum CodingKeys: String, CodingKey {
         case items, pinboards, stackItemIDs, excludedBundleIDs, historyLimit
         case savedFiniteHistoryLimit, isMonitoringPaused
         case panelHotkeyKeyCode, panelHotkeyModifiers
-        case hasCompletedOnboarding, launchAtLoginEnabled
+        case hasCompletedOnboarding, launchAtLoginEnabled, hidePanelAfterCopy
     }
 
     init(
@@ -47,7 +49,8 @@ struct PersistedData: Codable {
         panelHotkeyKeyCode: UInt32?,
         panelHotkeyModifiers: UInt32?,
         hasCompletedOnboarding: Bool?,
-        launchAtLoginEnabled: Bool?
+        launchAtLoginEnabled: Bool?,
+        hidePanelAfterCopy: Bool?
     ) {
         self.items = items
         self.pinboards = pinboards
@@ -60,6 +63,7 @@ struct PersistedData: Codable {
         self.panelHotkeyModifiers = panelHotkeyModifiers
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.launchAtLoginEnabled = launchAtLoginEnabled
+        self.hidePanelAfterCopy = hidePanelAfterCopy
     }
 
     init(from decoder: Decoder) throws {
@@ -75,6 +79,7 @@ struct PersistedData: Codable {
         panelHotkeyModifiers = try container.decodeIfPresent(UInt32.self, forKey: .panelHotkeyModifiers)
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
         launchAtLoginEnabled = try container.decodeIfPresent(Bool.self, forKey: .launchAtLoginEnabled)
+        hidePanelAfterCopy = try container.decodeIfPresent(Bool.self, forKey: .hidePanelAfterCopy)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -90,5 +95,6 @@ struct PersistedData: Codable {
         try container.encodeIfPresent(panelHotkeyModifiers, forKey: .panelHotkeyModifiers)
         try container.encodeIfPresent(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
         try container.encodeIfPresent(launchAtLoginEnabled, forKey: .launchAtLoginEnabled)
+        try container.encodeIfPresent(hidePanelAfterCopy, forKey: .hidePanelAfterCopy)
     }
 }

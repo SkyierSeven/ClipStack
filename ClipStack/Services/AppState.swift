@@ -21,6 +21,7 @@ final class AppState {
     var isMonitoringPaused = false
     var hasCompletedOnboarding = false
     var launchAtLoginEnabled = false
+    var hidePanelAfterCopy = true
 
     var isHistoryUnlimited: Bool {
         historyLimit == PersistedData.unlimitedHistoryLimit
@@ -44,9 +45,13 @@ final class AppState {
     }
 
     var onInsertItem: ((ClipboardItem, Bool) -> Void)?
+    var onCopyItem: ((ClipboardItem) -> Void)?
     var onTogglePanel: (() -> Void)?
     var onClosePanel: (() -> Void)?
     var onHotkeySettingsChanged: (() -> Void)?
+
+    /// Non-nil while the “copied” toast should be visible.
+    var copyToastToken: UUID?
 
     private let store = ClipboardStore()
 
@@ -78,6 +83,7 @@ final class AppState {
         isMonitoringPaused = data.isMonitoringPaused
         hasCompletedOnboarding = data.hasCompletedOnboarding ?? false
         launchAtLoginEnabled = data.launchAtLoginEnabled ?? LaunchAtLoginService.isEnabled
+        hidePanelAfterCopy = data.hidePanelAfterCopy ?? true
         if let keyCode = data.panelHotkeyKeyCode, let modifiers = data.panelHotkeyModifiers {
             panelHotkey = StoredHotkey(keyCode: keyCode, carbonModifiers: modifiers)
         }
@@ -104,7 +110,8 @@ final class AppState {
             panelHotkeyKeyCode: panelHotkey.keyCode,
             panelHotkeyModifiers: panelHotkey.carbonModifiers,
             hasCompletedOnboarding: hasCompletedOnboarding,
-            launchAtLoginEnabled: launchAtLoginEnabled
+            launchAtLoginEnabled: launchAtLoginEnabled,
+            hidePanelAfterCopy: hidePanelAfterCopy
         )
     }
 
@@ -203,6 +210,44 @@ final class AppState {
 
     func insertItem(_ item: ClipboardItem, asPlainText: Bool = false) {
         onInsertItem?(item, asPlainText)
+    }
+
+    func copySelectedItem() {
+        guard let selectedItemID,
+              let item = currentDisplayItems.first(where: { $0.id == selectedItemID }) else { return }
+        copyItem(item)
+    }
+
+    func copyItem(_ item: ClipboardItem) {
+        onCopyItem?(item)
+    }
+
+    func moveItemToFront(_ item: ClipboardItem) {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        let moved = items.remove(at: index)
+        items.insert(moved, at: 0)
+        selectedItemID = moved.id
+        save()
+    }
+
+    func showCopiedToast() {
+        let token = UUID()
+        copyToastToken = token
+        let shouldHidePanel = hidePanelAfterCopy
+        Task { @MainActor in
+            if shouldHidePanel {
+                try? await Task.sleep(nanoseconds: 550_000_000)
+                if copyToastToken == token {
+                    copyToastToken = nil
+                    onClosePanel?()
+                }
+            } else {
+                try? await Task.sleep(nanoseconds: 1_800_000_000)
+                if copyToastToken == token {
+                    copyToastToken = nil
+                }
+            }
+        }
     }
 
     func previewSelectedItem() {

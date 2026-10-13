@@ -29,6 +29,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        appState.onCopyItem = { [weak self] item in
+            self?.copyItemToPasteboard(item)
+        }
+
         appState.onTogglePanel = { [weak self] in
             self?.historyPanel?.toggle()
         }
@@ -51,5 +55,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         await historyPanel?.hideAndRestorePreviousApp()
         _ = ClipboardInsertService.paste(showingPromptIfNeeded: true)
+    }
+
+    private func copyItemToPasteboard(_ item: ClipboardItem) {
+        clipboardMonitor?.performingInternalWrite {
+            ClipboardInsertService.writeToClipboard(item)
+        }
+        appState.moveItemToFront(item)
+        appState.showCopiedToast()
     }
 }

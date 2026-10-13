@@ -39,7 +39,15 @@ struct HistoryView: View {
                     }
                     .shadow(color: .black.opacity(0.35), radius: 28, y: -4)
             }
+            .overlay(alignment: .top) {
+                if appState.copyToastToken != nil {
+                    copiedToast
+                        .padding(.top, 18)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
         }
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: appState.copyToastToken)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .focusable()
         .focusEffectDisabled(true)
@@ -55,7 +63,7 @@ struct HistoryView: View {
         }
         .onKeyPress(.return) {
             guard !searchFocused else { return .ignored }
-            appState.insertSelectedItem()
+            appState.copySelectedItem()
             return .handled
         }
         .onKeyPress(.space) {
@@ -86,6 +94,25 @@ struct HistoryView: View {
         .onChange(of: appState.selectedContentFilter) { _, _ in
             appState.selectFirstItemIfNeeded()
         }
+    }
+
+    private var copiedToast: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.white)
+            Text("已复制到剪贴板")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 14)
+        .background(
+            Capsule(style: .continuous)
+                .fill(Color(red: 0.18, green: 0.72, blue: 0.42))
+                .shadow(color: .black.opacity(0.35), radius: 16, y: 6)
+        )
+        .accessibilityLabel("已复制到剪贴板")
     }
 
     private var topBar: some View {
@@ -467,7 +494,7 @@ struct GuideCardView: View {
             .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 12) {
-                guideRow(icon: "hand.tap.fill", title: "点击卡片", detail: "插入")
+                guideRow(icon: "hand.tap.fill", title: "点击卡片", detail: "复制")
                 guideRow(icon: "eye.fill", title: "滑入后空格", detail: "预览")
                 guideRow(icon: "arrow.left.arrow.right", title: "左右方向键", detail: "切换")
             }
@@ -547,7 +574,7 @@ struct ItemCardView: View {
         .animation(.easeOut(duration: 0.15), value: isSelected)
         .contentShape(RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
         .onTapGesture {
-            appState.insertItem(item)
+            appState.copyItem(item)
         }
         .contextMenu {
             cardContextMenu
@@ -619,7 +646,8 @@ struct ItemCardView: View {
 
     @ViewBuilder
     private var cardContextMenu: some View {
-        Button("插入") { appState.insertItem(item) }
+        Button("复制到剪贴板") { appState.copyItem(item) }
+        Button("插入到当前应用") { appState.insertItem(item) }
         Button("快速查看") { appState.previewItem(item) }
         if item.pinboardID == nil {
             ForEach(appState.pinboards) { board in
