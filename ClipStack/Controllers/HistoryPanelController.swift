@@ -83,7 +83,6 @@ final class HistoryPanelController {
 
         isVisible = true
         appState.selectFirstItemIfNeeded()
-        focusSearchField()
         NSLog("[ClipStack] panel shown")
     }
 

@@ -156,9 +156,6 @@ struct HistoryView: View {
             Capsule().strokeBorder(Color.white.opacity(0.1))
         }
         .frame(maxWidth: 360)
-        .onAppear {
-            syncSearchFocus()
-        }
         .onChange(of: appState.shouldFocusSearch) { _, shouldFocus in
             if shouldFocus {
                 syncSearchFocus()
@@ -273,7 +270,8 @@ struct HistoryView: View {
                 items: appState.filteredHistoryItems,
                 emptyMessage: emptyMessageForCurrentView,
                 hoveredItemID: $hoveredItemID,
-                highlightQuery: appState.parsedSearchQuery.raw
+                highlightQuery: appState.parsedSearchQuery.raw,
+                showsGuideCard: false
             )
         } else {
             switch appState.selectedTab {
@@ -282,7 +280,8 @@ struct HistoryView: View {
                     items: appState.filteredHistoryItems,
                     emptyMessage: emptyMessageForCurrentView,
                     hoveredItemID: $hoveredItemID,
-                    highlightQuery: nil
+                    highlightQuery: nil,
+                    showsGuideCard: true
                 )
             case .pinboards:
                 VStack(alignment: .leading, spacing: 8) {
@@ -291,7 +290,8 @@ struct HistoryView: View {
                         items: appState.pinnedItems,
                         emptyMessage: emptyMessageForCurrentView,
                         hoveredItemID: $hoveredItemID,
-                        highlightQuery: nil
+                        highlightQuery: nil,
+                        showsGuideCard: false
                     )
                 }
             case .stack:
@@ -299,7 +299,8 @@ struct HistoryView: View {
                     items: appState.stackItems,
                     emptyMessage: emptyMessageForCurrentView,
                     hoveredItemID: $hoveredItemID,
-                    highlightQuery: nil
+                    highlightQuery: nil,
+                    showsGuideCard: false
                 )
             }
         }
@@ -360,32 +361,22 @@ struct ItemStripView: View {
     let emptyMessage: String
     @Binding var hoveredItemID: UUID?
     let highlightQuery: String?
+    var showsGuideCard: Bool = false
+
+    private static let guideCardID = UUID(uuidString: "00000000-0000-4000-8000-000000000001")!
 
     var body: some View {
-        if items.isEmpty {
-            HStack {
-                Spacer()
-                VStack(spacing: 8) {
-                    Image(systemName: appState.isSearching ? "magnifyingglass" : "doc.on.clipboard")
-                        .font(.system(size: 28, weight: .light))
-                        .foregroundStyle(AppTheme.mutedText)
-                    Text(emptyMessage)
-                        .font(.system(size: 13))
-                        .foregroundStyle(AppTheme.mutedText)
-                        .multilineTextAlignment(.center)
-                    if appState.isSearching {
-                        Text("支持 type:image · app:Safari · 固定:默认")
-                            .font(.system(size: 11))
-                            .foregroundStyle(AppTheme.mutedText.opacity(0.8))
-                    }
-                }
-                .frame(height: AppTheme.cardStripHeight)
-                Spacer()
-            }
+        if items.isEmpty && !showsGuideCard {
+            emptyState
         } else {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: AppTheme.cardSpacing) {
+                        if showsGuideCard {
+                            GuideCardView()
+                                .id(Self.guideCardID)
+                        }
+
                         ForEach(items) { item in
                             ItemCardView(
                                 item: item,
@@ -398,6 +389,10 @@ struct ItemStripView: View {
                                 hoveredItemID = hovering ? item.id : nil
                                 if hovering { appState.selectedItemID = item.id }
                             }
+                        }
+
+                        if items.isEmpty {
+                            emptyStateInline
                         }
                     }
                     .padding(.horizontal, AppTheme.cardHoverOverflow / 2)
@@ -417,10 +412,103 @@ struct ItemStripView: View {
             }
         }
     }
+
+    private var emptyState: some View {
+        HStack {
+            Spacer()
+            emptyStateContent
+                .frame(height: AppTheme.cardStripHeight)
+            Spacer()
+        }
+    }
+
+    private var emptyStateInline: some View {
+        emptyStateContent
+            .frame(width: AppTheme.cardWidth, height: AppTheme.cardHeight)
+            .padding(.leading, 4)
+    }
+
+    private var emptyStateContent: some View {
+        VStack(spacing: 8) {
+            Image(systemName: appState.isSearching ? "magnifyingglass" : "doc.on.clipboard")
+                .font(.system(size: 28, weight: .light))
+                .foregroundStyle(AppTheme.mutedText)
+            Text(emptyMessage)
+                .font(.system(size: 13))
+                .foregroundStyle(AppTheme.mutedText)
+                .multilineTextAlignment(.center)
+            if appState.isSearching {
+                Text("支持 type:image · app:Safari · 固定:默认")
+                    .font(.system(size: 11))
+                    .foregroundStyle(AppTheme.mutedText.opacity(0.8))
+            }
+        }
+    }
+}
+
+/// Fixed leading card that teaches basic interactions. Not a clipboard item.
+struct GuideCardView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var colors: CardColors { AppTheme.colors(for: colorScheme) }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 7) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
+                Text("操作提示")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(colors.primaryText)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 28)
+            .padding(.bottom, 8)
+
+            VStack(alignment: .leading, spacing: 12) {
+                guideRow(icon: "hand.tap.fill", title: "点击卡片", detail: "插入")
+                guideRow(icon: "eye.fill", title: "滑入后空格", detail: "预览")
+                guideRow(icon: "arrow.left.arrow.right", title: "左右方向键", detail: "切换")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 18)
+        }
+        .frame(width: AppTheme.cardWidth, height: AppTheme.cardHeight)
+        .background(colors.background, in: RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous)
+                .strokeBorder(AppTheme.accent.opacity(colorScheme == .dark ? 0.45 : 0.35), lineWidth: 1)
+        }
+        .shadow(color: colors.shadow, radius: 8, y: 3)
+    }
+
+    private func guideRow(icon: String, title: String, detail: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(AppTheme.accent)
+                .frame(width: 18)
+
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(colors.primaryText)
+
+            Spacer(minLength: 4)
+
+            Text(detail)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(colors.secondaryText)
+        }
+        .frame(maxWidth: 140)
+    }
 }
 
 struct ItemCardView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.colorScheme) private var colorScheme
     let item: ClipboardItem
     let isHovered: Bool
     let isSelected: Bool
@@ -429,31 +517,29 @@ struct ItemCardView: View {
     /// Keyboard/default selection highlight — does not enlarge the card.
     private var showsSelectionChrome: Bool { isSelected || isHovered }
 
+    private var colors: CardColors { AppTheme.colors(for: colorScheme) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader
 
             previewArea
-                .frame(width: AppTheme.cardWidth - 20, height: AppTheme.cardPreviewHeight)
                 .padding(.horizontal, 10)
-
-            actionBar
-                .frame(height: AppTheme.cardActionHeight)
-                .opacity(isHovered ? 1 : 0)
-                .allowsHitTesting(isHovered)
+                .padding(.bottom, 10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .frame(width: AppTheme.cardWidth, height: AppTheme.cardHeight)
-        .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
+        .background(colors.background, in: RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous)
                 .strokeBorder(
-                    showsSelectionChrome ? Color.white.opacity(0.55) : AppTheme.cardBorder,
+                    showsSelectionChrome ? colors.selectedBorder : colors.border,
                     lineWidth: showsSelectionChrome ? 1.2 : 0.8
                 )
         }
         .focusEffectDisabled(true)
-        .shadow(color: AppTheme.cardShadow, radius: isHovered ? 14 : 8, y: isHovered ? 4 : 3)
+        .shadow(color: colors.shadow, radius: isHovered ? 14 : 8, y: isHovered ? 4 : 3)
         .scaleEffect(isHovered ? AppTheme.cardHoverScale : 1.0, anchor: .bottom)
         .offset(y: isHovered ? -AppTheme.cardHoverLift : 0)
         .zIndex(isHovered ? 10 : (isSelected ? 1 : 0))
@@ -474,12 +560,12 @@ struct ItemCardView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.sourceAppName ?? "未知")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(colors.secondaryText)
                     .lineLimit(1)
                 if let pinboardName = appState.pinboardName(for: item.pinboardID) {
                     Text("固定: \(pinboardName)")
                         .font(.system(size: 9))
-                        .foregroundStyle(AppTheme.accent.opacity(0.85))
+                        .foregroundStyle(AppTheme.accent.opacity(0.9))
                         .lineLimit(1)
                 }
             }
@@ -487,28 +573,6 @@ struct ItemCardView: View {
         }
         .padding(.horizontal, 10)
         .frame(height: AppTheme.cardHeaderHeight, alignment: .center)
-    }
-
-    private var actionBar: some View {
-        HStack(spacing: 6) {
-            Button {
-                appState.previewItem(item)
-            } label: {
-                Image(systemName: "eye")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 28, height: 22)
-                    .background(Color.black.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
-            .help("快速查看（空格）")
-
-            Spacer(minLength: 0)
-
-            cardMenu
-        }
-        .padding(.horizontal, 8)
-        .padding(.top, 2)
     }
 
     @ViewBuilder
@@ -522,7 +586,7 @@ struct ItemCardView: View {
         } else {
             Image(systemName: item.typeIcon)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(colors.secondaryText)
                 .frame(width: 14, height: 14)
         }
     }
@@ -535,35 +599,22 @@ struct ItemCardView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.04))
+                    .background(colors.previewFill)
             } else if item.isCodeSnippet, let text = item.text {
                 CodePreviewView(text: text, language: item.codeLanguage)
             } else {
                 highlightedText(item.displayTextForSearch)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.24))
+                    .foregroundStyle(colors.previewText)
                     .lineLimit(5)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .padding(6)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(item.isCodeSnippet ? Color.clear : Color.black.opacity(0.03))
+        .background(item.isCodeSnippet ? Color.clear : colors.previewFill)
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.cardInnerCorner, style: .continuous))
         .clipped()
-    }
-
-    private var cardMenu: some View {
-        Menu {
-            cardContextMenu
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 22)
-                .background(Color.black.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
-        }
-        .menuStyle(.borderlessButton)
     }
 
     @ViewBuilder
