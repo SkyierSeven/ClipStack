@@ -25,7 +25,10 @@ enum AppTheme {
     /// Dock chrome stays dark; cards follow system appearance.
     static let dockBackground = Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.82)
     static let mutedText = Color.white.opacity(0.62)
+    /// Guide / instructional accent (blue).
     static let accent = Color(red: 0.35, green: 0.62, blue: 1.0)
+    /// Pinned item accent (amber) — intentionally different from guide blue.
+    static let pinAccent = Color(red: 0.92, green: 0.62, blue: 0.18)
 
     static func colors(for scheme: ColorScheme) -> CardColors {
         scheme == .dark ? .dark : .light
@@ -36,6 +39,7 @@ struct CardColors {
     let background: Color
     let border: Color
     let selectedBorder: Color
+    let pinnedBorder: Color
     let shadow: Color
     let primaryText: Color
     let secondaryText: Color
@@ -50,6 +54,7 @@ struct CardColors {
         background: Color(red: 0.98, green: 0.98, blue: 0.99),
         border: Color.black.opacity(0.08),
         selectedBorder: Color.black.opacity(0.22),
+        pinnedBorder: Color(red: 0.88, green: 0.58, blue: 0.12).opacity(0.85),
         shadow: Color.black.opacity(0.22),
         primaryText: Color(red: 0.16, green: 0.16, blue: 0.18),
         secondaryText: Color(red: 0.42, green: 0.42, blue: 0.45),
@@ -65,6 +70,7 @@ struct CardColors {
         background: Color(red: 0.18, green: 0.18, blue: 0.20),
         border: Color.white.opacity(0.10),
         selectedBorder: Color.white.opacity(0.34),
+        pinnedBorder: Color(red: 0.96, green: 0.72, blue: 0.28).opacity(0.9),
         shadow: Color.black.opacity(0.45),
         primaryText: Color(red: 0.94, green: 0.94, blue: 0.96),
         secondaryText: Color(red: 0.70, green: 0.70, blue: 0.74),

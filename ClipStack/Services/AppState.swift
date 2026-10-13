@@ -3,7 +3,6 @@ import Observation
 
 enum HistoryTab: String, CaseIterable, Identifiable {
     case history = "历史"
-    case pinboards = "固定板"
     case stack = "插入队列"
 
     var id: String { rawValue }
@@ -13,7 +12,6 @@ enum HistoryTab: String, CaseIterable, Identifiable {
 @Observable
 final class AppState {
     var items: [ClipboardItem] = []
-    var pinboards: [Pinboard] = [Pinboard(name: "默认")]
     var stackItemIDs: [UUID] = []
     var excludedBundleIDs: Set<String> = []
     var historyLimit: Int = PersistedData.unlimitedHistoryLimit
@@ -34,7 +32,6 @@ final class AppState {
     var searchQuery = ""
     var shouldFocusSearch = false
     var selectedTab: HistoryTab = .history
-    var selectedPinboardID: UUID?
     var selectedContentFilter: ContentTypeFilter = .all
     var selectedItemID: UUID?
 
@@ -67,14 +64,9 @@ final class AppState {
         ClipboardSearch.parse(searchQuery)
     }
 
-    init() {
-        selectedPinboardID = pinboards.first?.id
-    }
-
     func load() {
         let data = store.load()
         items = data.items
-        pinboards = data.pinboards.isEmpty ? [Pinboard(name: "默认")] : data.pinboards
         stackItemIDs = data.stackItemIDs
         excludedBundleIDs = Set(data.excludedBundleIDs)
         historyLimit = data.historyLimit
@@ -87,7 +79,6 @@ final class AppState {
         if let keyCode = data.panelHotkeyKeyCode, let modifiers = data.panelHotkeyModifiers {
             panelHotkey = StoredHotkey(keyCode: keyCode, carbonModifiers: modifiers)
         }
-        selectedPinboardID = pinboards.first?.id
     }
 
     func save() {
@@ -101,7 +92,7 @@ final class AppState {
     private func buildPersistedData() -> PersistedData {
         PersistedData(
             items: items,
-            pinboards: pinboards,
+            pinboards: [],
             stackItemIDs: stackItemIDs,
             excludedBundleIDs: Array(excludedBundleIDs).sorted(),
             historyLimit: historyLimit,
@@ -119,11 +110,7 @@ final class AppState {
         switch selectedTab {
         case .history:
             if isSearching { return applyContentFilter(to: searchResults) }
-            return applyContentFilter(to: items.filter { $0.pinboardID == nil })
-        case .pinboards:
-            if isSearching { return applyContentFilter(to: searchResults) }
-            guard let selectedPinboardID else { return [] }
-            return applyContentFilter(to: items.filter { $0.pinboardID == selectedPinboardID })
+            return applyContentFilter(to: orderedHistoryItems(items))
         case .stack:
             if isSearching { return applyContentFilter(to: searchResults) }
             let stack = stackItemIDs.compactMap { id in items.first { $0.id == id } }
@@ -133,13 +120,7 @@ final class AppState {
 
     var filteredHistoryItems: [ClipboardItem] {
         if isSearching { return applyContentFilter(to: searchResults) }
-        return applyContentFilter(to: items.filter { $0.pinboardID == nil })
-    }
-
-    var pinnedItems: [ClipboardItem] {
-        if isSearching { return applyContentFilter(to: searchResults) }
-        guard let selectedPinboardID else { return [] }
-        return applyContentFilter(to: items.filter { $0.pinboardID == selectedPinboardID })
+        return applyContentFilter(to: orderedHistoryItems(items))
     }
 
     var stackItems: [ClipboardItem] {
@@ -152,25 +133,16 @@ final class AppState {
         let query = parsedSearchQuery
         guard !query.raw.isEmpty else { return [] }
 
-        return items
-            .filter { item in
-                let pinboardName = pinboardName(for: item.pinboardID)
-                return ClipboardSearch.matches(item: item, query: query, pinboardName: pinboardName)
-            }
-            .sorted { lhs, rhs in
-                let lhsScore = ClipboardSearch.score(
-                    item: lhs,
-                    query: query,
-                    pinboardName: pinboardName(for: lhs.pinboardID)
-                )
-                let rhsScore = ClipboardSearch.score(
-                    item: rhs,
-                    query: query,
-                    pinboardName: pinboardName(for: rhs.pinboardID)
-                )
-                if lhsScore != rhsScore { return lhsScore > rhsScore }
-                return lhs.createdAt > rhs.createdAt
-            }
+        return orderedHistoryItems(
+            items.filter { ClipboardSearch.matches(item: $0, query: query) }
+        )
+        .sorted { lhs, rhs in
+            let lhsScore = ClipboardSearch.score(item: lhs, query: query)
+            let rhsScore = ClipboardSearch.score(item: rhs, query: query)
+            if lhsScore != rhsScore { return lhsScore > rhsScore }
+            if lhs.isPinned != rhs.isPinned { return lhs.isPinned && !rhs.isPinned }
+            return lhs.createdAt > rhs.createdAt
+        }
     }
 
     var searchResultCount: Int {
@@ -292,15 +264,11 @@ final class AppState {
         return items.filter { selectedContentFilter.matches($0) }
     }
 
-    func pinboardName(for pinboardID: UUID?) -> String? {
-        guard let pinboardID else { return nil }
-        return pinboards.first { $0.id == pinboardID }?.name
-    }
-
     func addItem(_ item: ClipboardItem) {
         var normalized = item.withPersistedImage()
         if let duplicateIndex = items.firstIndex(where: { isDuplicate($0, normalized) }) {
-            items.remove(at: duplicateIndex)
+            let existing = items.remove(at: duplicateIndex)
+            normalized.isPinned = existing.isPinned || normalized.isPinned
         }
         items.insert(normalized, at: 0)
         trimHistory()
@@ -333,49 +301,39 @@ final class AppState {
         }
         items.removeAll { $0.id == item.id }
         stackItemIDs.removeAll { $0 == item.id }
-        for index in pinboards.indices {
-            pinboards[index].itemIDs.removeAll { $0 == item.id }
-        }
         save()
     }
 
     func clearHistory() {
-        let toDelete = items.filter { $0.pinboardID == nil }
+        let toDelete = items.filter { !$0.isPinned }
         for item in toDelete {
             if let imagePath = item.imagePath {
                 ImageAssetStore.shared.deleteImage(relativePath: imagePath)
             }
         }
-        items.removeAll { $0.pinboardID == nil }
+        items.removeAll { !$0.isPinned }
         stackItemIDs.removeAll { id in !items.contains { $0.id == id } }
         save()
     }
 
-    func pinItem(_ item: ClipboardItem, to pinboardID: UUID) {
+    func togglePin(_ item: ClipboardItem) {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
-        items[index].pinboardID = pinboardID
-        if let pinboardIndex = pinboards.firstIndex(where: { $0.id == pinboardID }) {
-            if !pinboards[pinboardIndex].itemIDs.contains(item.id) {
-                pinboards[pinboardIndex].itemIDs.insert(item.id, at: 0)
+        let willPin = !items[index].isPinned
+        items[index].isPinned = willPin
+
+        if willPin {
+            // Keep existing pinned cards stable: append after them instead of jumping to front.
+            let otherPinnedCount = items.filter { $0.isPinned && $0.id != item.id }.count
+            let moved = items.remove(at: index)
+            if otherPinnedCount == 0 {
+                items.insert(moved, at: 0)
+            } else if let lastPinnedIndex = items.lastIndex(where: \.isPinned) {
+                items.insert(moved, at: lastPinnedIndex + 1)
+            } else {
+                items.insert(moved, at: 0)
             }
+            selectedItemID = moved.id
         }
-        save()
-    }
-
-    func unpinItem(_ item: ClipboardItem) {
-        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
-        let pinboardID = items[index].pinboardID
-        items[index].pinboardID = nil
-        if let pinboardID, let pinboardIndex = pinboards.firstIndex(where: { $0.id == pinboardID }) {
-            pinboards[pinboardIndex].itemIDs.removeAll { $0 == item.id }
-        }
-        save()
-    }
-
-    func addPinboard(named name: String) {
-        let board = Pinboard(name: name)
-        pinboards.append(board)
-        selectedPinboardID = board.id
         save()
     }
 
@@ -431,14 +389,20 @@ final class AppState {
         save()
     }
 
+    private func orderedHistoryItems(_ source: [ClipboardItem]) -> [ClipboardItem] {
+        let pinned = source.filter(\.isPinned)
+        let rest = source.filter { !$0.isPinned }
+        return pinned + rest
+    }
+
     private func trimHistory() {
         guard historyLimit > 0 else { return }
-        let unpinnedCount = items.filter { $0.pinboardID == nil }.count
+        let unpinnedCount = items.filter { !$0.isPinned }.count
         guard unpinnedCount > historyLimit else { return }
         var removed = 0
         let target = unpinnedCount - historyLimit
         items = items.filter { item in
-            if item.pinboardID != nil { return true }
+            if item.isPinned { return true }
             if removed < target {
                 removed += 1
                 if let imagePath = item.imagePath {

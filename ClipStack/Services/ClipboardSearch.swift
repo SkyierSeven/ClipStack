@@ -6,7 +6,7 @@ struct ClipboardSearch {
         let tokens: [String]
         let contentType: ClipboardContentType?
         let appFilter: String?
-        let pinboardFilter: String?
+        let pinnedOnly: Bool
     }
 
     static func parse(_ raw: String) -> ParsedQuery {
@@ -14,7 +14,7 @@ struct ClipboardSearch {
         var tokens: [String] = []
         var contentType: ClipboardContentType?
         var appFilter: String?
-        var pinboardFilter: String?
+        var pinnedOnly = false
 
         for part in trimmed.split(whereSeparator: \.isWhitespace) {
             let segment = String(part)
@@ -31,8 +31,13 @@ struct ClipboardSearch {
                 continue
             }
 
-            if lower.hasPrefix("pin:") || lower.hasPrefix("固定:") {
-                pinboardFilter = segment.split(separator: ":", maxSplits: 1).last.map(String.init) ?? ""
+            if lower == "pin:" || lower == "固定:" || lower == "pinned:" || lower == "已固定" {
+                pinnedOnly = true
+                continue
+            }
+
+            if lower.hasPrefix("pin:") || lower.hasPrefix("固定:") || lower.hasPrefix("pinned:") {
+                pinnedOnly = true
                 continue
             }
 
@@ -44,15 +49,11 @@ struct ClipboardSearch {
             tokens: tokens,
             contentType: contentType,
             appFilter: appFilter,
-            pinboardFilter: pinboardFilter
+            pinnedOnly: pinnedOnly
         )
     }
 
-    static func matches(
-        item: ClipboardItem,
-        query: ParsedQuery,
-        pinboardName: String?
-    ) -> Bool {
+    static func matches(item: ClipboardItem, query: ParsedQuery) -> Bool {
         guard !query.raw.isEmpty else { return true }
 
         if let contentType = query.contentType, item.type != contentType {
@@ -69,25 +70,23 @@ struct ClipboardSearch {
             }
         }
 
-        if let pinboardFilter = query.pinboardFilter?.lowercased(), !pinboardFilter.isEmpty {
-            guard let pinboardName, pinboardName.lowercased().contains(pinboardFilter) else {
-                return false
-            }
+        if query.pinnedOnly, !item.isPinned {
+            return false
         }
 
         if query.tokens.isEmpty {
             return true
         }
 
-        let haystack = searchableText(for: item, pinboardName: pinboardName)
+        let haystack = searchableText(for: item)
         return query.tokens.allSatisfy { token in
             haystack.contains(token.lowercased())
         }
     }
 
-    static func score(item: ClipboardItem, query: ParsedQuery, pinboardName: String?) -> Int {
-        guard !query.tokens.isEmpty else { return 0 }
-        let haystack = searchableText(for: item, pinboardName: pinboardName)
+    static func score(item: ClipboardItem, query: ParsedQuery) -> Int {
+        guard !query.tokens.isEmpty else { return item.isPinned ? 1 : 0 }
+        let haystack = searchableText(for: item)
         var score = 0
 
         for token in query.tokens {
@@ -98,18 +97,18 @@ struct ClipboardSearch {
             if item.sourceAppName?.lowercased().contains(needle) == true { score += 2 }
         }
 
-        if item.pinboardID != nil { score += 1 }
+        if item.isPinned { score += 2 }
         return score
     }
 
-    private static func searchableText(for item: ClipboardItem, pinboardName: String?) -> String {
+    private static func searchableText(for item: ClipboardItem) -> String {
         var parts: [String] = [
             item.previewText,
             item.text ?? "",
             item.searchIndex ?? "",
             item.sourceAppName ?? "",
             item.sourceBundleID ?? "",
-            pinboardName ?? "",
+            item.isPinned ? "固定 pinned" : "",
             typeLabel(for: item.type),
         ]
         parts.append(contentsOf: item.filePaths)

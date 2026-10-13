@@ -17,7 +17,7 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
     let sourceAppName: String?
     let sourceBundleID: String?
     let createdAt: Date
-    var pinboardID: UUID?
+    var isPinned: Bool
     var searchIndex: String?
 
     /// Legacy field for migration from single-file JSON storage.
@@ -33,7 +33,7 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
         sourceAppName: String? = nil,
         sourceBundleID: String? = nil,
         createdAt: Date = Date(),
-        pinboardID: UUID? = nil,
+        isPinned: Bool = false,
         searchIndex: String? = nil
     ) {
         self.id = id
@@ -45,7 +45,7 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
         self.sourceAppName = sourceAppName
         self.sourceBundleID = sourceBundleID
         self.createdAt = createdAt
-        self.pinboardID = pinboardID
+        self.isPinned = isPinned
         self.searchIndex = searchIndex
     }
 
@@ -102,12 +102,8 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
         return NSImage(data: data)
     }
 
-    func matchesSearch(_ query: String, pinboardName: String? = nil) -> Bool {
-        ClipboardSearch.matches(
-            item: self,
-            query: ClipboardSearch.parse(query),
-            pinboardName: pinboardName
-        )
+    func matchesSearch(_ query: String) -> Bool {
+        ClipboardSearch.matches(item: self, query: ClipboardSearch.parse(query))
     }
 
     var displayTextForSearch: String {
@@ -143,7 +139,7 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
             sourceAppName: copy.sourceAppName,
             sourceBundleID: copy.sourceBundleID,
             createdAt: copy.createdAt,
-            pinboardID: copy.pinboardID,
+            isPinned: copy.isPinned,
             searchIndex: copy.searchIndex
         )
     }
@@ -152,7 +148,7 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case id, type, text, imagePath, imageData, filePaths
-        case sourceAppName, sourceBundleID, createdAt, pinboardID, searchIndex
+        case sourceAppName, sourceBundleID, createdAt, pinboardID, isPinned, searchIndex
     }
 
     init(from decoder: Decoder) throws {
@@ -166,8 +162,14 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
         sourceAppName = try container.decodeIfPresent(String.self, forKey: .sourceAppName)
         sourceBundleID = try container.decodeIfPresent(String.self, forKey: .sourceBundleID)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
-        pinboardID = try container.decodeIfPresent(UUID.self, forKey: .pinboardID)
         searchIndex = try container.decodeIfPresent(String.self, forKey: .searchIndex)
+
+        if let pinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) {
+            isPinned = pinned
+        } else {
+            // Migrate legacy pinboard entries into a simple pinned flag.
+            isPinned = try container.decodeIfPresent(UUID.self, forKey: .pinboardID) != nil
+        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -180,7 +182,7 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
         try container.encodeIfPresent(sourceAppName, forKey: .sourceAppName)
         try container.encodeIfPresent(sourceBundleID, forKey: .sourceBundleID)
         try container.encode(createdAt, forKey: .createdAt)
-        try container.encodeIfPresent(pinboardID, forKey: .pinboardID)
+        try container.encode(isPinned, forKey: .isPinned)
         try container.encodeIfPresent(searchIndex, forKey: .searchIndex)
     }
 }

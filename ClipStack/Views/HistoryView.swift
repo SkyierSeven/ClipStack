@@ -153,7 +153,7 @@ struct HistoryView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(AppTheme.mutedText)
-            TextField("搜索历史、固定板、图片文字…", text: Bindable(appState).searchQuery)
+            TextField("搜索历史、图片文字…", text: Bindable(appState).searchQuery)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
                 .focusEffectDisabled(true)
@@ -271,10 +271,6 @@ struct HistoryView: View {
             actionChip("清空历史", systemImage: "trash") {
                 appState.clearHistory()
             }
-        case .pinboards:
-            actionChip("新建", systemImage: "plus") {
-                appState.addPinboard(named: "固定板 \(appState.pinboards.count + 1)")
-            }
         }
     }
 
@@ -310,17 +306,6 @@ struct HistoryView: View {
                     highlightQuery: nil,
                     showsGuideCard: true
                 )
-            case .pinboards:
-                VStack(alignment: .leading, spacing: 8) {
-                    pinboardPicker
-                    ItemStripView(
-                        items: appState.pinnedItems,
-                        emptyMessage: emptyMessageForCurrentView,
-                        hoveredItemID: $hoveredItemID,
-                        highlightQuery: nil,
-                        showsGuideCard: false
-                    )
-                }
             case .stack:
                 ItemStripView(
                     items: appState.stackItems,
@@ -346,39 +331,9 @@ struct HistoryView: View {
         switch appState.selectedTab {
         case .history:
             return "复制一些内容，它们会出现在这里"
-        case .pinboards:
-            return "右键条目可固定到这里"
         case .stack:
             return "把条目加入队列后可依次插入"
         }
-    }
-
-    private var pinboardPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(appState.pinboards) { board in
-                    Button {
-                        appState.selectedPinboardID = board.id
-                        appState.selectFirstItemIfNeeded()
-                    } label: {
-                        Text(board.name)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(appState.selectedPinboardID == board.id ? .white : AppTheme.mutedText)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background {
-                                Capsule().fill(
-                                    appState.selectedPinboardID == board.id
-                                        ? AppTheme.accent.opacity(0.55)
-                                        : Color.white.opacity(0.08)
-                                )
-                            }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .frame(height: 28)
     }
 }
 
@@ -465,7 +420,7 @@ struct ItemStripView: View {
                 .foregroundStyle(AppTheme.mutedText)
                 .multilineTextAlignment(.center)
             if appState.isSearching {
-                Text("支持 type:image · app:Safari · 固定:默认")
+                Text("支持 type:image · app:Safari · pin:")
                     .font(.system(size: 11))
                     .foregroundStyle(AppTheme.mutedText.opacity(0.8))
             }
@@ -544,7 +499,20 @@ struct ItemCardView: View {
     /// Keyboard/default selection highlight — does not enlarge the card.
     private var showsSelectionChrome: Bool { isSelected || isHovered }
 
+    /// Pinned cards stay still — no hover lift/scale.
+    private var showsHoverMotion: Bool { isHovered && !item.isPinned }
+
     private var colors: CardColors { AppTheme.colors(for: colorScheme) }
+
+    private var borderColor: Color {
+        if item.isPinned { return colors.pinnedBorder }
+        return showsSelectionChrome ? colors.selectedBorder : colors.border
+    }
+
+    private var borderWidth: CGFloat {
+        if item.isPinned { return 1.5 }
+        return showsSelectionChrome ? 1.2 : 0.8
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -560,18 +528,16 @@ struct ItemCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous)
-                .strokeBorder(
-                    showsSelectionChrome ? colors.selectedBorder : colors.border,
-                    lineWidth: showsSelectionChrome ? 1.2 : 0.8
-                )
+                .strokeBorder(borderColor, lineWidth: borderWidth)
         }
         .focusEffectDisabled(true)
-        .shadow(color: colors.shadow, radius: isHovered ? 14 : 8, y: isHovered ? 4 : 3)
-        .scaleEffect(isHovered ? AppTheme.cardHoverScale : 1.0, anchor: .bottom)
-        .offset(y: isHovered ? -AppTheme.cardHoverLift : 0)
-        .zIndex(isHovered ? 10 : (isSelected ? 1 : 0))
-        .animation(.easeOut(duration: 0.15), value: isHovered)
+        .shadow(color: colors.shadow, radius: showsHoverMotion ? 14 : 8, y: showsHoverMotion ? 4 : 3)
+        .scaleEffect(showsHoverMotion ? AppTheme.cardHoverScale : 1.0, anchor: .bottom)
+        .offset(y: showsHoverMotion ? -AppTheme.cardHoverLift : 0)
+        .zIndex(showsHoverMotion ? 10 : (isSelected || item.isPinned ? 1 : 0))
+        .animation(.easeOut(duration: 0.15), value: showsHoverMotion)
         .animation(.easeOut(duration: 0.15), value: isSelected)
+        .animation(.easeOut(duration: 0.15), value: item.isPinned)
         .contentShape(RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
         .onTapGesture {
             appState.copyItem(item)
@@ -584,19 +550,25 @@ struct ItemCardView: View {
     private var cardHeader: some View {
         HStack(spacing: 6) {
             appIcon
-            VStack(alignment: .leading, spacing: 1) {
-                Text(item.sourceAppName ?? "未知")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(colors.secondaryText)
-                    .lineLimit(1)
-                if let pinboardName = appState.pinboardName(for: item.pinboardID) {
-                    Text("固定: \(pinboardName)")
-                        .font(.system(size: 9))
-                        .foregroundStyle(AppTheme.accent.opacity(0.9))
-                        .lineLimit(1)
-                }
-            }
+            Text(item.sourceAppName ?? "未知")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(colors.secondaryText)
+                .lineLimit(1)
+
             Spacer(minLength: 0)
+
+            Button {
+                appState.togglePin(item)
+            } label: {
+                Image(systemName: item.isPinned ? "pin.fill" : "pin")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(item.isPinned ? AppTheme.pinAccent : colors.secondaryText.opacity(0.7))
+                    .frame(width: 22, height: 20)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .opacity(item.isPinned || isHovered ? 1 : 0)
+            .help(item.isPinned ? "取消固定" : "固定到列表前面")
         }
         .padding(.horizontal, 10)
         .frame(height: AppTheme.cardHeaderHeight, alignment: .center)
@@ -649,13 +621,7 @@ struct ItemCardView: View {
         Button("复制到剪贴板") { appState.copyItem(item) }
         Button("插入到当前应用") { appState.insertItem(item) }
         Button("快速查看") { appState.previewItem(item) }
-        if item.pinboardID == nil {
-            ForEach(appState.pinboards) { board in
-                Button("固定到 \(board.name)") { appState.pinItem(item, to: board.id) }
-            }
-        } else {
-            Button("取消固定") { appState.unpinItem(item) }
-        }
+        Button(item.isPinned ? "取消固定" : "固定") { appState.togglePin(item) }
         Button("加入插入队列") { appState.addToStack(item) }
         if appState.stackItemIDs.contains(item.id) {
             Button("移出队列") { appState.removeFromStack(item) }
