@@ -7,6 +7,7 @@ final class ClipboardMonitor {
     private var lastChangeCount = NSPasteboard.general.changeCount
     private var timer: Timer?
     private var isInternalWrite = false
+    private var ignoreUntil: Date?
 
     init(appState: AppState) {
         self.appState = appState
@@ -22,9 +23,14 @@ final class ClipboardMonitor {
         RunLoop.main.add(timer!, forMode: .common)
     }
 
-    func markInternalWrite() {
+    /// Runs a pasteboard write without recording it as a new history item.
+    func performingInternalWrite(_ work: () -> Void) {
         isInternalWrite = true
+        work()
         lastChangeCount = NSPasteboard.general.changeCount
+        // Ignore a short window in case changeCount settles across ticks.
+        ignoreUntil = Date().addingTimeInterval(0.8)
+        isInternalWrite = false
     }
 
     private func poll() {
@@ -33,16 +39,22 @@ final class ClipboardMonitor {
         let pasteboard = NSPasteboard.general
         let changeCount = pasteboard.changeCount
         guard changeCount != lastChangeCount else { return }
-        lastChangeCount = changeCount
 
-        if isInternalWrite {
-            isInternalWrite = false
+        if isInternalWrite || (ignoreUntil.map { Date() < $0 } ?? false) {
+            lastChangeCount = changeCount
             return
         }
+
+        lastChangeCount = changeCount
 
         guard let frontApp = NSWorkspace.shared.frontmostApplication else { return }
         let bundleID = frontApp.bundleIdentifier
         if let bundleID, appState.excludedBundleIDs.contains(bundleID) {
+            return
+        }
+
+        // Never re-record our own writes if ClipStack somehow becomes frontmost.
+        if bundleID == Bundle.main.bundleIdentifier {
             return
         }
 

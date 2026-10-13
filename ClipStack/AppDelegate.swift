@@ -23,9 +23,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.hotkeyManager?.reregisterHotkeys()
         }
 
-        appState.onInsertItem = { [weak self] item in
-            ClipboardInsertService.insert(item)
-            self?.historyPanel?.hide()
+        appState.onInsertItem = { [weak self] item, asPlainText in
+            Task { @MainActor in
+                await self?.insertItem(item, asPlainText: asPlainText)
+            }
         }
 
         appState.onTogglePanel = { [weak self] in
@@ -41,5 +42,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         appState.saveImmediately()
+    }
+
+    private func insertItem(_ item: ClipboardItem, asPlainText: Bool) async {
+        clipboardMonitor?.performingInternalWrite {
+            ClipboardInsertService.writeToClipboard(item, asPlainText: asPlainText)
+        }
+
+        await historyPanel?.hideAndRestorePreviousApp()
+        _ = ClipboardInsertService.paste(showingPromptIfNeeded: true)
     }
 }

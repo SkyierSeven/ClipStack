@@ -45,6 +45,10 @@ final class ImageAssetStore {
         deleteImage(relativePath: relativePath(for: itemID))
     }
 
+    func absoluteURL(forRelativePath relativePath: String) -> URL {
+        baseURL.appendingPathComponent(relativePath)
+    }
+
     private var baseURL: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("ClipStack", isDirectory: true)

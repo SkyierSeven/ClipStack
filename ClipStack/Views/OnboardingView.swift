@@ -1,5 +1,4 @@
 import AppKit
-import ApplicationServices
 import SwiftUI
 
 @MainActor
@@ -59,22 +58,35 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 16) {
             Label("辅助功能权限", systemImage: "hand.raised.fill")
                 .font(.title3.bold())
-            Text("自动插入内容需要辅助功能权限。你可以在系统设置中授权 ClipStack。")
+            Text("自动插入内容需要辅助功能权限。重新编译或替换应用后，macOS 可能要求你重新勾选一次。")
                 .foregroundStyle(.secondary)
             HStack {
-                Image(systemName: AXIsProcessTrusted() ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                    .foregroundStyle(AXIsProcessTrusted() ? .green : .orange)
-                Text(AXIsProcessTrusted() ? "已授权" : "尚未授权")
+                Image(systemName: ClipboardInsertService.isTrusted ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                    .foregroundStyle(ClipboardInsertService.isTrusted ? .green : .orange)
+                Text(ClipboardInsertService.isTrusted ? "已授权" : "尚未授权")
                 Spacer()
-                if !AXIsProcessTrusted() {
-                    Button("打开系统设置") { openAccessibilitySettings() }
+                if !ClipboardInsertService.isTrusted {
+                    Button("请求权限") {
+                        _ = ClipboardInsertService.requestAccessibilityPermission(prompt: true)
+                    }
+                    Button("打开系统设置") {
+                        ClipboardInsertService.openAccessibilitySettings()
+                    }
                 }
             }
             .padding()
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+
+            Text(Bundle.main.bundlePath)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.tertiary)
+                .textSelection(.enabled)
         }
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            _ = ClipboardInsertService.requestAccessibilityPermission(prompt: false)
+        }
     }
 
     private var shortcutStep: some View {
@@ -111,12 +123,6 @@ struct OnboardingView: View {
             get: { appState.panelHotkey },
             set: { appState.updatePanelHotkey($0) }
         )
-    }
-
-    private func openAccessibilitySettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
     }
 
     @MainActor

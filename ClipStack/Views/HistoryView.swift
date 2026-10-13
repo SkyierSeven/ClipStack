@@ -42,7 +42,7 @@ struct HistoryView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .focusable()
-        .focusEffectDisabled()
+        .focusEffectDisabled(true)
         .onKeyPress(.leftArrow) {
             guard !searchFocused else { return .ignored }
             appState.moveSelection(offset: -1)
@@ -56,6 +56,11 @@ struct HistoryView: View {
         .onKeyPress(.return) {
             guard !searchFocused else { return .ignored }
             appState.insertSelectedItem()
+            return .handled
+        }
+        .onKeyPress(.space) {
+            guard !searchFocused else { return .ignored }
+            appState.previewSelectedItem()
             return .handled
         }
         .onKeyPress(.delete) {
@@ -124,6 +129,7 @@ struct HistoryView: View {
             TextField("搜索历史、固定板、图片文字…", text: Bindable(appState).searchQuery)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
+                .focusEffectDisabled(true)
                 .foregroundStyle(.white)
                 .onTapGesture {
                     focusSearchField()
@@ -420,7 +426,8 @@ struct ItemCardView: View {
     let isSelected: Bool
     let highlightQuery: String?
 
-    private var isActive: Bool { isHovered || isSelected }
+    /// Keyboard/default selection highlight — does not enlarge the card.
+    private var showsSelectionChrome: Bool { isSelected || isHovered }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -432,23 +439,29 @@ struct ItemCardView: View {
 
             actionBar
                 .frame(height: AppTheme.cardActionHeight)
-                .opacity(isActive ? 1 : 0)
-                .allowsHitTesting(isActive)
+                .opacity(isHovered ? 1 : 0)
+                .allowsHitTesting(isHovered)
         }
         .frame(width: AppTheme.cardWidth, height: AppTheme.cardHeight)
         .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous)
-                .strokeBorder(isActive ? AppTheme.accent.opacity(0.65) : AppTheme.cardBorder, lineWidth: isActive ? 1.5 : 0.8)
+                .strokeBorder(
+                    showsSelectionChrome ? Color.white.opacity(0.55) : AppTheme.cardBorder,
+                    lineWidth: showsSelectionChrome ? 1.2 : 0.8
+                )
         }
-        .shadow(color: AppTheme.cardShadow, radius: isActive ? 14 : 8, y: isActive ? 4 : 3)
-        .scaleEffect(isActive ? AppTheme.cardHoverScale : 1.0, anchor: .bottom)
-        .offset(y: isActive ? -AppTheme.cardHoverLift : 0)
-        .zIndex(isActive ? 10 : 0)
-        .animation(.easeOut(duration: 0.15), value: isActive)
-        .onTapGesture(count: 2) {
-            appState.onInsertItem?(item)
+        .focusEffectDisabled(true)
+        .shadow(color: AppTheme.cardShadow, radius: isHovered ? 14 : 8, y: isHovered ? 4 : 3)
+        .scaleEffect(isHovered ? AppTheme.cardHoverScale : 1.0, anchor: .bottom)
+        .offset(y: isHovered ? -AppTheme.cardHoverLift : 0)
+        .zIndex(isHovered ? 10 : (isSelected ? 1 : 0))
+        .animation(.easeOut(duration: 0.15), value: isHovered)
+        .animation(.easeOut(duration: 0.15), value: isSelected)
+        .contentShape(RoundedRectangle(cornerRadius: AppTheme.cardCorner, style: .continuous))
+        .onTapGesture {
+            appState.insertItem(item)
         }
         .contextMenu {
             cardContextMenu
@@ -477,18 +490,24 @@ struct ItemCardView: View {
     }
 
     private var actionBar: some View {
-        ZStack {
-            cardAction("插入", prominent: true) {
-                appState.onInsertItem?(item)
+        HStack(spacing: 6) {
+            Button {
+                appState.previewItem(item)
+            } label: {
+                Image(systemName: "eye")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 22)
+                    .background(Color.black.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
             }
-            .frame(width: 76)
+            .buttonStyle(.plain)
+            .help("快速查看（空格）")
 
-            HStack {
-                Spacer()
-                cardMenu
-            }
-            .padding(.trailing, 8)
+            Spacer(minLength: 0)
+
+            cardMenu
         }
+        .padding(.horizontal, 8)
         .padding(.top, 2)
     }
 
@@ -549,7 +568,8 @@ struct ItemCardView: View {
 
     @ViewBuilder
     private var cardContextMenu: some View {
-        Button("插入") { appState.onInsertItem?(item) }
+        Button("插入") { appState.insertItem(item) }
+        Button("快速查看") { appState.previewItem(item) }
         if item.pinboardID == nil {
             ForEach(appState.pinboards) { board in
                 Button("固定到 \(board.name)") { appState.pinItem(item, to: board.id) }
@@ -562,24 +582,10 @@ struct ItemCardView: View {
             Button("移出队列") { appState.removeFromStack(item) }
         }
         Divider()
-        Button("纯文本插入") { ClipboardInsertService.insert(item, asPlainText: true) }
+        Button("纯文本插入") { appState.insertItem(item, asPlainText: true) }
         Button("删除", role: .destructive) { appState.deleteItem(item) }
     }
 
-    private func cardAction(_ title: String, prominent: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(prominent ? .white : .secondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 5)
-                .background(
-                    prominent ? AppTheme.accent : Color.black.opacity(0.06),
-                    in: RoundedRectangle(cornerRadius: 6)
-                )
-        }
-        .buttonStyle(.plain)
-    }
     @ViewBuilder
     private func highlightedText(_ text: String) -> some View {
         if let highlightQuery,

@@ -6,6 +6,7 @@ final class HistoryPanelController {
     private let appState: AppState
     private let panel: KeyablePanel
     private var isVisible = false
+    private var previousApp: NSRunningApplication?
 
     init(appState: AppState) {
         self.appState = appState
@@ -30,9 +31,10 @@ final class HistoryPanelController {
         panel.isOpaque = false
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
-        let hostingView = NSHostingView(rootView: contentView)
+        let hostingView = FocusRingDisabledHostingView(rootView: contentView)
         hostingView.focusRingType = .none
         panel.contentView = hostingView
+        panel.contentView?.focusRingType = .none
     }
 
     func toggle() {
@@ -45,6 +47,12 @@ final class HistoryPanelController {
 
     func show() {
         guard let screen = NSScreen.main else { return }
+
+        if let front = NSWorkspace.shared.frontmostApplication,
+           front.bundleIdentifier != Bundle.main.bundleIdentifier {
+            previousApp = front
+        }
+
         let visibleFrame = screen.visibleFrame
         let height = AppTheme.panelHeight + 24
         let targetFrame = NSRect(
@@ -108,6 +116,20 @@ final class HistoryPanelController {
                 NSLog("[ClipStack] panel hidden")
             }
         }
+    }
+
+    /// Instantly dismisses the panel and restores the app that was focused before ClipStack.
+    func hideAndRestorePreviousApp() async {
+        panel.alphaValue = 0
+        panel.orderOut(nil)
+        panel.alphaValue = 1
+        isVisible = false
+
+        if let previousApp, !previousApp.isTerminated {
+            previousApp.activate(options: [.activateIgnoringOtherApps])
+        }
+        // Let focus settle before simulating ⌘V.
+        try? await Task.sleep(nanoseconds: 120_000_000)
     }
 
     func focusSearchField() {

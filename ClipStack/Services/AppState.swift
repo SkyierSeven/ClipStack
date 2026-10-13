@@ -43,7 +43,7 @@ final class AppState {
         panelHotkey.displayString
     }
 
-    var onInsertItem: ((ClipboardItem) -> Void)?
+    var onInsertItem: ((ClipboardItem, Bool) -> Void)?
     var onTogglePanel: (() -> Void)?
     var onClosePanel: (() -> Void)?
     var onHotkeySettingsChanged: (() -> Void)?
@@ -198,7 +198,19 @@ final class AppState {
     func insertSelectedItem() {
         guard let selectedItemID,
               let item = currentDisplayItems.first(where: { $0.id == selectedItemID }) else { return }
-        onInsertItem?(item)
+        onInsertItem?(item, false)
+    }
+
+    func insertItem(_ item: ClipboardItem, asPlainText: Bool = false) {
+        onInsertItem?(item, asPlainText)
+    }
+
+    func previewSelectedItem() {
+        QuickLookPreviewService.shared.previewSelectedItem(from: self)
+    }
+
+    func previewItem(_ item: ClipboardItem) {
+        QuickLookPreviewService.shared.preview(item)
     }
 
     func deleteSelectedItem() {
@@ -341,8 +353,8 @@ final class AppState {
     func insertStackSequentially() async {
         for id in stackItemIDs {
             guard let item = items.first(where: { $0.id == id }) else { continue }
-            onInsertItem?(item)
-            try? await Task.sleep(nanoseconds: 250_000_000)
+            onInsertItem?(item, false)
+            try? await Task.sleep(nanoseconds: 350_000_000)
         }
     }
 
