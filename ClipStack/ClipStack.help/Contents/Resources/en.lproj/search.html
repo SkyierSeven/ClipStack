@@ -10,21 +10,22 @@
   <a name="search"></a>
   <p><a href="index.html">← 返回目录</a></p>
   <h1>搜索</h1>
-  <p>在面板顶部搜索框输入关键词，即可搜索历史文本；图片会尝试匹配 OCR 识别出的文字。</p>
+  <p>面板顶部搜索框支持文本、来源应用名，以及图片 OCR 文字。</p>
 
   <h2>过滤语法</h2>
   <table>
     <tr><th>写法</th><th>作用</th><th>示例</th></tr>
-    <tr><td><code>type:</code> / <code>类型:</code></td><td>按类型过滤</td><td><code>type:image</code>、<code>类型:链接</code></td></tr>
-    <tr><td><code>app:</code> / <code>应用:</code></td><td>按来源应用过滤</td><td><code>app:Safari</code></td></tr>
-    <tr><td><code>pin:</code> / <code>固定:</code></td><td>只看已固定项</td><td><code>pin:</code>、<code>固定:</code></td></tr>
+    <tr><td><code>type:</code> / <code>类型:</code></td><td>类型</td><td><code>type:image</code>、<code>类型:链接</code></td></tr>
+    <tr><td><code>app:</code> / <code>应用:</code></td><td>来源应用</td><td><code>app:Safari</code></td></tr>
+    <tr><td><code>pin:</code> / <code>固定:</code></td><td>仅固定项</td><td><code>pin:</code></td></tr>
   </table>
 
-  <p>可组合使用，例如：</p>
-  <p><code>type:text app:Xcode 报错</code></p>
+  <h2>类型值</h2>
+  <p><code>text</code>/<code>文字</code>/<code>txt</code> · <code>url</code>/<code>链接</code>/<code>link</code> · <code>image</code>/<code>图片</code>/<code>img</code> · <code>file</code>/<code>文件</code></p>
 
-  <h2>支持的类型值</h2>
-  <p><code>text</code> / <code>文字</code>、<code>url</code> / <code>链接</code>、<code>image</code> / <code>图片</code>、<code>file</code> / <code>文件</code></p>
+  <h2>组合示例</h2>
+  <p><code>type:text app:Xcode 报错</code></p>
+  <p><code>类型:图片 pin:</code></p>
 
   <div class="footer"><a href="index.html">返回目录</a></div>
 </body>

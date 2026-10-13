@@ -11,32 +11,33 @@
   <p><a href="index.html">← 返回目录</a></p>
   <h1>常见问题</h1>
 
-  <h2>打不开 / 提示身份不明</h2>
+  <h2>打不开 App</h2>
   <ol>
-    <li>右键 <code>ClipStack.app</code> →「打开」</li>
-    <li>或：「系统设置 → 隐私与安全性」→「仍要打开」</li>
-    <li>终端：<code>xattr -cr /Applications/ClipStack.app</code></li>
+    <li>右键 →「打开」</li>
+    <li>「系统设置 → 隐私与安全性」→「仍要打开」</li>
+    <li><code>xattr -cr /Applications/ClipStack.app</code></li>
   </ol>
 
-  <h2>插入到当前应用没反应</h2>
-  <ul>
-    <li>确认已授予<strong>辅助功能</strong>权限</li>
-    <li>替换或重新编译 App 后，到辅助功能列表里删掉旧条目再重新勾选</li>
-    <li>插入前请先把光标放在目标输入框里</li>
-  </ul>
-
   <h2>设置窗口找不到</h2>
-  <p>打开设置时，ClipStack 会临时出现在 Dock，并把设置窗放到最前。若仍看不见，检查是否被其他全屏空间挡住，或点 Dock 中的 ClipStack 图标。</p>
+  <p>看 Dock 是否出现 ClipStack；切回普通桌面空间；再点一次菜单栏「设置…」。</p>
 
-  <h2>历史里没有新内容</h2>
+  <h2>插入没反应</h2>
   <ul>
-    <li>是否开启了「暂停记录」</li>
-    <li>来源应用是否在「排除应用」里</li>
-    <li>ClipStack 自己写入剪贴板的内容不会再记一条，避免重复</li>
+    <li>辅助功能是否勾选了<strong>当前这份</strong> App</li>
+    <li>换过编译版本：删旧条目再勾选</li>
+    <li>光标是否在目标输入框</li>
+  </ul>
+  <p class="muted">只点卡片复制再自己粘贴，不需要辅助功能。</p>
+
+  <h2>没有新历史</h2>
+  <ul>
+    <li>是否「暂停记录」</li>
+    <li>来源 App 是否在排除列表</li>
+    <li>是否为 ClipStack 自己写回剪贴板（不会重复入库）</li>
   </ul>
 
-  <h2>还需要帮助？</h2>
-  <p>请到 <a href="https://github.com/SkyierSeven/ClipStack/issues">GitHub Issues</a> 反馈，并附上 macOS 版本与 ClipStack 版本。</p>
+  <h2>反馈</h2>
+  <p><a href="https://github.com/SkyierSeven/ClipStack/issues">GitHub Issues</a> — 请附 macOS 与 ClipStack 版本。</p>
 
   <div class="footer"><a href="index.html">返回目录</a></div>
 </body>

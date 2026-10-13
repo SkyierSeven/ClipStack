@@ -12,26 +12,27 @@
   <h1>快速开始</h1>
 
   <h2>ClipStack 是什么</h2>
-  <p>ClipStack 运行在<strong>菜单栏</strong>（默认无 Dock 图标），自动记录你复制过的文本、链接、图片和文件，方便随时找回。</p>
+  <p>菜单栏剪贴板历史工具：自动记录文本、链接、图片、文件，支持搜索与固定。默认<strong>没有 Dock 图标</strong>；打开「设置」时会短暂出现在 Dock。</p>
 
   <h2>安装</h2>
   <ol>
-    <li>从 <a href="https://github.com/SkyierSeven/ClipStack/releases">GitHub Releases</a> 下载最新版</li>
-    <li>将 <code>ClipStack.app</code> 拖入「应用程序」</li>
-    <li>若提示无法打开：右键 App →「打开」，或在「系统设置 → 隐私与安全性」中放行</li>
+    <li>从 <a href="https://github.com/SkyierSeven/ClipStack/releases">GitHub Releases</a> 下载 zip 或 dmg</li>
+    <li>把 <code>ClipStack.app</code> 拖进「应用程序」</li>
+    <li>若无法打开：右键 →「打开」，或在「隐私与安全性」中放行，或执行 <code>xattr -cr /Applications/ClipStack.app</code></li>
   </ol>
 
   <h2>第一次启动</h2>
   <ol>
     <li>在菜单栏找到剪贴板图标</li>
-    <li>按默认快捷键 <kbd>⌘⇧X</kbd> 打开历史面板（可在设置中修改）</li>
-    <li>复制几段内容后，它们会出现在面板里</li>
+    <li>按 <kbd>⌘⇧X</kbd> 打开历史面板（可在设置中修改）</li>
+    <li>复制一些内容，卡片会出现在面板里</li>
+    <li><strong>点击卡片</strong>即可写回系统剪贴板，然后到任意 App 里粘贴</li>
   </ol>
 
   <h2>辅助功能权限</h2>
-  <p>若使用右键菜单里的「插入到当前应用」，需要授予辅助功能权限：</p>
+  <p>仅「插入到当前应用 / 纯文本插入」需要。路径：</p>
   <p>「系统设置 → 隐私与安全性 → 辅助功能」→ 勾选 ClipStack。</p>
-  <p class="muted">重新编译或替换 App 后，macOS 有时会要求你重新勾选一次。</p>
+  <p class="muted">重新编译或替换 App 后，请删除旧条目再重新勾选。</p>
 
   <div class="footer"><a href="index.html">返回目录</a></div>
 </body>
